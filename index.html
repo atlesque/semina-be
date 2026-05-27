@@ -149,6 +149,7 @@
       const MAX_FONT_HEIGHT_RATIO = 0.25;
       const MIN_FONT_SIZE_PX = 28;
       const HINT_CLEARANCE_PX = 24;
+      let cachedHintHeight = null;
 
       function pickRandom(arr, lastIndex) {
         let idx;
@@ -165,15 +166,21 @@
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
       }
 
+      function getHintHeight() {
+        if (cachedHintHeight !== null) return cachedHintHeight;
+        const hintEl = document.getElementById("hint");
+        cachedHintHeight = hintEl ? hintEl.getBoundingClientRect().height : 0;
+        return cachedHintHeight;
+      }
+
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
         const topWordEl = document.getElementById("top-word");
         const bottomWordEl = document.getElementById("bottom-word");
-        const hintEl = document.getElementById("hint");
         const maxWidthPx = parseFloat(getComputedStyle(document.body).getPropertyValue("--wordmark-max-width"));
         const safeMaxWidthPx = Number.isFinite(maxWidthPx) ? maxWidthPx : window.innerWidth;
         const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, safeMaxWidthPx);
-        const hintHeight = hintEl ? hintEl.getBoundingClientRect().height : 0;
+        const hintHeight = getHintHeight();
         const bodyStyles = getComputedStyle(document.body);
         const bodyPaddingTop = parseFloat(bodyStyles.paddingTop) || 0;
         const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
@@ -187,8 +194,8 @@
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
           wordmarkEl.style.fontSize = `${mid}px`;
-          const noWrap = topWordEl.getClientRects().length <= 1 && bottomWordEl.getClientRects().length <= 1;
-          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight && noWrap;
+          const hasNoWrapping = topWordEl.getClientRects().length <= 1 && bottomWordEl.getClientRects().length <= 1;
+          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight && hasNoWrapping;
 
           if (fits) {
             best = mid;
@@ -230,6 +237,7 @@
 
       let resizeTimer = null;
       window.addEventListener("resize", () => {
+        cachedHintHeight = null;
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(fitWordmark, RESIZE_DEBOUNCE_MS);
       });
