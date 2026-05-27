@@ -49,7 +49,7 @@
     </style>
   </head>
   <body>
-    <div id="wordmark"><span id="top-word">Clickini</span><br><span>Pini</span></div>
+    <div id="wordmark"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></div>
     <div id="hint">Click anywhere to change</div>
 
     <script>
@@ -258,8 +258,10 @@
           } else {
             availableWords = [...uniqueWords];
           }
+          lastWordIndex = -1;
         } catch (_) {
           availableWords = [...uniqueWords];
+          lastWordIndex = -1;
           console.warn("Using local word list due to remote fetch failure or timeout.");
         } finally {
           clearTimeout(timeoutId);
