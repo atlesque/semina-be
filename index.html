@@ -207,6 +207,7 @@
 
       const FADE_MS = 150;
       const FETCH_TIMEOUT_MS = 2500;
+      const MAX_FETCHED_WORDS = 1000;
       const RESIZE_DEBOUNCE_MS = 100;
       const REMOTE_WORDS_URL = "https://api.datamuse.com/words?sp=*ine&max=500";
 
@@ -253,7 +254,11 @@
 
       async function fetchAdditionalWords() {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort("Fetch timeout"), FETCH_TIMEOUT_MS);
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, FETCH_TIMEOUT_MS);
 
         try {
           const response = await fetch(REMOTE_WORDS_URL, { signal: controller.signal });
@@ -263,7 +268,7 @@
 
           const data = await response.json();
           const fetchedWords = (Array.isArray(data) ? data : [])
-            .slice(0, 1000)
+            .slice(0, MAX_FETCHED_WORDS)
             .map(({ word }) => normalizeWord(word))
             .filter((word) => word && word.length <= 30);
 
@@ -274,8 +279,7 @@
           }
         } catch (error) {
           availableWords = [...uniqueWords];
-          const isTimeout = error && error.name === "AbortError";
-          const reason = isTimeout ? "timeout" : "error";
+          const reason = timedOut ? "timeout" : "error";
           console.warn(`Using local word list due to remote fetch ${reason}.`, error);
         } finally {
           lastWordIndex = -1;
