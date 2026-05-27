@@ -258,12 +258,11 @@
           } else {
             availableWords = [...uniqueWords];
           }
-          lastWordIndex = -1;
         } catch (_) {
           availableWords = [...uniqueWords];
-          lastWordIndex = -1;
           console.warn("Using local word list due to remote fetch failure or timeout.");
         } finally {
+          lastWordIndex = -1;
           clearTimeout(timeoutId);
         }
       }
@@ -279,9 +278,11 @@
 
         const wordmarkEl = document.getElementById("wordmark");
         const topWordEl = document.getElementById("top-word");
+        const bottomWordEl = document.getElementById("bottom-word");
         wordmarkEl.style.opacity = "0";
         setTimeout(() => {
           topWordEl.textContent = prefix;
+          bottomWordEl.textContent = "Pini";
           fitWordmark();
           wordmarkEl.style.opacity = "1";
         }, FADE_MS);
