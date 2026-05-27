@@ -51,7 +51,7 @@
   </head>
   <body>
     <h1 id="wordmark" aria-label="Clickini Pini"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></h1>
-    <div id="hint" role="img" aria-label="Click anywhere to change">☝️</div>
+    <div id="hint" aria-label="Click anywhere to change">☝️</div>
 
     <script>
       const words = [
@@ -236,8 +236,10 @@
 
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
-        const computedMaxWidth = parseFloat(getComputedStyle(wordmarkEl).maxWidth);
-        const maxWidthPx = Number.isFinite(computedMaxWidth) ? computedMaxWidth : window.innerWidth;
+        const computedMaxWidth = getComputedStyle(wordmarkEl).maxWidth;
+        const maxWidthPx = computedMaxWidth.endsWith("px")
+          ? parseFloat(computedMaxWidth)
+          : Number.POSITIVE_INFINITY;
         const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, maxWidthPx);
         const maxHeight = window.innerHeight * MAX_TEXT_HEIGHT_RATIO;
         const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
