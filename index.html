@@ -49,7 +49,7 @@
     </style>
   </head>
   <body>
-    <div id="wordmark">Clickini<br>Pini</div>
+    <div id="wordmark"><span id="top-word">Clickini</span><br><span>Pini</span></div>
     <div id="hint">Click anywhere to change</div>
 
     <script>
@@ -219,7 +219,7 @@
 
       function normalizeWord(rawWord) {
         if (typeof rawWord !== "string") return null;
-        const cleaned = rawWord.trim().replace(/[^a-zA-ZÀ-ÿ'-]/g, "");
+        const cleaned = rawWord.trim().replace(/[^\p{L}'-]/gu, "");
         if (!cleaned) return null;
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
       }
@@ -260,6 +260,7 @@
           }
         } catch (_) {
           availableWords = [...uniqueWords];
+          console.warn("Using local word list due to remote fetch failure or timeout.");
         } finally {
           clearTimeout(timeoutId);
         }
@@ -275,9 +276,10 @@
         const textColor = getTextColor(bg);
 
         const wordmarkEl = document.getElementById("wordmark");
+        const topWordEl = document.getElementById("top-word");
         wordmarkEl.style.opacity = "0";
         setTimeout(() => {
-          wordmarkEl.innerHTML = `${prefix}<br>Pini`;
+          topWordEl.textContent = prefix;
           fitWordmark();
           wordmarkEl.style.opacity = "1";
         }, FADE_MS);
