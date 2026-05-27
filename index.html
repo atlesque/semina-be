@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pini</title>
-    <meta name="description" content="Click anywhere to generate a new silly word ending in -ini. A fun, colorful wordmark generator." />
+    <meta name="description" content="Pinininini" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://semina.be/" />
     <meta property="og:title" content="Pini" />
-    <meta property="og:description" content="Click anywhere to generate a new silly word ending in -ini. A fun, colorful wordmark generator." />
+    <meta property="og:description" content="Pinininini" />
     <meta property="og:image" content="https://semina.be/og-image.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Pini" />
@@ -49,6 +49,32 @@
         max-width: var(--wordmark-max-width);
       }
 
+      #bottom-word {
+        color: inherit;
+        animation: rainbowGlow 3s linear infinite;
+      }
+
+      @keyframes rainbowGlow {
+        0% {
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #ff4d4d, 0 0 16px #ff884d;
+        }
+        20% {
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #ffcc4d, 0 0 16px #ffee4d;
+        }
+        40% {
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #5cff7a, 0 0 16px #2cffcc;
+        }
+        60% {
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #4dc3ff, 0 0 16px #4d7dff;
+        }
+        80% {
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #c26bff, 0 0 16px #ff66d8;
+        }
+        100% {
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #ff4d4d, 0 0 16px #ff884d;
+        }
+      }
+
       #hint {
         position: fixed;
         bottom: 1.5rem;
@@ -67,118 +93,16 @@
 
     <script>
       const words = [
-        "Fashion", "Pineapple", "Mozzarella", "Gelatin",
-        "Penguin", "Mandarin", "Cappuccino", "Macaroon",
-        "Tetrahedron", "Stallion", "Champion", "Dragon", "Phantom",
-        "Neon", "Falcon", "Ramen", "Balloon", "Cannon", "Mission",
-        "Action", "Passion", "Fusion", "Vision", "Nation", "Portion",
-        "Function", "Fraction", "Mansion", "Version", "Station", "Mention",
-        "Ocean", "Onion", "Cushion", "Fiction", "Suction", "Traction",
-        "Captain", "Mountain", "Fountain", "Certain", "Curtain", "Raisin",
-        "Protein", "Caffeine", "Morphine", "Machine", "Routine", "Magazine",
-        "Trampoline", "Gasoline", "Tangerine", "Wolverine", "Submarine",
-        "Serpentine", "Byzantine", "Crystalline", "Clandestine", "Borderline",
-        "Alkaline", "Turpentine", "Guillotine", "Libertine", "Argentine",
-        "Brigantine", "Florentine", "Clementine", "Palatine", "Celestine",
-        "Augustin", "Paladin", "Javelin", "Dolphin", "Goblin", "Merlin",
-        "Corazon", "Amazon", "Horizon", "Benison", "Crimson", "Bison",
-        "Croissant", "Crouton", "Gallon", "Salmon", "Lemon", "Melon",
-        "Mango", "Dynamo", "Volcano", "Tornado", "Buffalo", "Mosquito",
-        "Potato", "Tomato", "Avocado", "Vibrato", "Libretto", "Falsetto",
-        "Risotto", "Concerto", "Fresco", "Espresso", "Manifesto", "Presto",
-        "Incognito", "Mosquito", "Armadillo", "Gorilla", "Vanilla", "Chinchilla",
-        "Umbrella", "Tortilla", "Quesadilla", "Enchilada", "Piñata", "Empanada",
-        "Paparazzi", "Tsunami", "Origami", "Teriyaki", "Wasabi", "Bonsai",
-        "Karaoke", "Karate", "Hibachi", "Tempura", "Samurai", "Shogun",
-        "Viking", "Pilgrim", "Phantom", "Titan", "Saturn", "Martin",
-        "Jasmine", "Valentine", "Wolverine", "Figurine", "Concubine",
-        "Porcupine", "Discipline", "Medicine", "Gasoline", "Heroine",
-        "Sapphire", "Campfire", "Vampire", "Empire", "Inspire", "Admire",
-        "Desire", "Retire", "Conspire", "Acquire", "Inquire", "Require",
-        "Flamingo", "Lingo", "Bingo", "Jingo", "Dingo", "Pingo",
-        "Mingo", "Ningo", "Wingo", "Zingo", "Kingo", "Ringo",
-        "Springbok", "Hammock", "Shamrock", "Hemlock", "Gridlock",
-        "Sherlock", "Dragonfly", "Butterfly", "Firefly", "Horsefly",
-        "Blueberry", "Strawberry", "Raspberry", "Gooseberry", "Mulberry",
-        "Elderberry", "Huckleberry", "Boysenberry", "Loganberry",
-        "Wolverine", "Tangerine", "Libertine", "Margarine", "Figurine",
-        "Tambourine", "Mandoline", "Crystalline", "Serpentine",
-        "Champion", "Companion", "Medallion", "Accordion", "Battalion",
-        "Centurion", "Dominion", "Opinion", "Scorpion", "Stallion",
-        "Vermillion", "Pavilion", "Rebellion", "Communion", "Reunion",
-        "Oblivion", "Champion", "Dandelion", "Chameleon", "Napoleon",
-        "Pantheon", "Dungeon", "Pigeon", "Surgeon", "Bludgeon",
-        "Curmudgeon", "Dudgeon", "Gudgeon", "Luncheon", "Truncheon",
-        "Doubloon", "Bassoon", "Festoon", "Harpoon", "Lagoon",
-        "Platoon", "Cartoon", "Typhoon", "Dragoon", "Baboon",
-        "Maroon", "Buffoon", "Cocoon", "Mushroom", "Heirloom",
-        "Phantom", "Quantum", "Forum", "Venom", "Serum",
-        "Album", "Podium", "Stadium", "Aquarium", "Terrarium",
-        "Vivarium", "Planetarium", "Auditorium", "Emporium", "Gymnasium",
-        "Millennium", "Symposium", "Conundrum", "Curriculum", "Pendulum",
-        "Arcanum", "Compendium", "Equilibrium", "Harmonium", "Solarium",
-        "Crematorium", "Moratorium", "Honorarium", "Sanitarium",
-        "Peppercorn", "Popcorn", "Unicorn", "Acorn", "Blackthorn",
-        "Hawthorn", "Longhorn", "Foghorn", "Bighorn", "Buckhorn",
-        "Sycamore", "Baltimore", "Dandelion", "Calendula", "Magnolia",
-        "Begonia", "Petunia", "Zinnia", "Dahlia", "Camellia",
-        "Wisteria", "Glycerin", "Geranium", "Euphorbia", "Amaranth",
-        "Lavender", "Coriander", "Oleander", "Salamander", "Commander",
-        "Bystander", "Remainder", "Surrender", "Contender", "Pretender",
-        "Defender", "Offender", "Slender", "Tender", "Gender",
-        "Blender", "Splendor", "Render", "Vendor", "Fender",
-        "Wingspan", "Lifespan", "Overran", "Caravan", "Toucan",
-        "Pelican", "Vatican", "Mohican", "Lexicon", "Rubicon",
-        "Silicon", "Halogen", "Nitrogen", "Hydrogen", "Oxygen",
-        "Polygon", "Hexagon", "Pentagon", "Octagon", "Paragon",
-        "Tarragon", "Dragon", "Wagon", "Baton", "Saffron",
-        "Marathon", "Criterion", "Electron", "Neutron", "Proton",
-        "Cinnamon", "Cardamom", "Phenom", "Phantom", "Fathom",
-        "Rhythm", "Blossom", "Ransom", "Handsome", "Awesome",
-        "Gruesome", "Tiresome", "Lonesome", "Wholesome", "Winsome",
-        "Gladiator", "Senator", "Inator", "Terminator", "Navigator",
-        "Excavator", "Innovator", "Moderator", "Spectator", "Translator",
-        "Alligator", "Elevator", "Respirator", "Detonator", "Incubator",
-        "Simulator", "Calculator", "Ventilator", "Accelerator",
-        "Noodle", "Strudel", "Poodle", "Doodle", "Oodle",
-        "Kaboodle", "Yankee", "Cookie", "Bookie", "Rookie",
-        "Wookie", "Hoodie", "Foodie", "Groupie", "Zombie",
-        "Brownie", "Toffee", "Coffee", "Waffle", "Truffle",
-        "Scuffle", "Shuffle", "Muffle", "Ruffle", "Duffle",
-        "Buffalo", "Ravioli", "Cannoli", "Broccoli", "Rondeau",
-        "Chateau", "Gateau", "Plateau", "Bureau", "Tableau",
-        "Desperado", "Avocado", "Mikado", "Tornado", "Colorado",
-        "Bravado", "Commando", "Orlando", "Fernando", "Armando",
-        "Calypso", "Tempo", "Lento", "Presto", "Bimbo",
-        "Combo", "Rambo", "Jumbo", "Mambo", "Samba",
-        "Rumba", "Timba", "Zumba", "Bamba", "Mamba",
-        "Condor", "Mentor", "Vector", "Factor", "Rector",
-        "Sector", "Nectar", "Tractor", "Raptor", "Pastor",
-        "Master", "Mister", "Monster", "Lobster", "Hamster",
-        "Roster", "Poster", "Toaster", "Coaster", "Booster",
-        "Rooster", "Cluster", "Bluster", "Muster", "Luster",
-        "Punster", "Funster", "Gangster", "Mobster", "Lobster",
-        "Prankster", "Trickster", "Jokester", "Hipster",
-        "Webster", "Forester", "Semester", "Canister", "Register",
-        "Minister", "Sinister", "Spinster", "Songster", "Youngster",
-        "Banister", "Holster", "Bolster", "Polyester", "Winchester",
-        "Manchester", "Colchester", "Chichester", "Dorchester",
-        "Westminster", "Rochester", "Leicester", "Gloucester",
-        "Wolverhampton", "Birmingham", "Nottingham", "Buckingham",
-        "Cunningham", "Markham", "Beckham", "Oldham", "Durham",
-        "Rainforest", "Tempest", "Conquest", "Request", "Contest",
-        "Protest", "Manifest", "Interest", "Modest", "Earnest",
-        "Harvest", "Suggest", "Digest", "Invest", "Divest",
-        "Unrest", "Arrest", "Distress", "Progress", "Congress",
-        "Egress", "Ingress", "Access", "Excess", "Process",
-        "Recess", "Confess", "Impress", "Express", "Suppress",
-        "Catfish", "Starfish", "Swordfish", "Jellyfish", "Goldfish",
-        "Blowfish", "Lionfish", "Clownfish", "Cuttlefish", "Crawfish",
-        "Crayfish", "Oafish", "Raffish", "Outlandish", "Standish",
-        "Brandish", "Fiendish", "Freakish", "Squeamish", "Skirmish",
-        "Diminish", "Abolish", "Polish", "Foolish", "Coolish",
-        "Childish", "Selfish", "Elfish", "Ogreish", "Ghoulish",
-        "Brutish", "Skittish", "Knavish", "Slavish", "Cravish"
+        "Apple", "Banana", "Orange", "Mango", "Lemon", "Peach", "Cherry", "Berry",
+        "Cookie", "Muffin", "Waffle", "Pancake", "Noodle", "Pizza", "Burger", "Taco",
+        "Rainbow", "Sunshine", "Starlight", "Moonlight", "Cloud", "Thunder", "Breeze", "Meadow",
+        "River", "Ocean", "Forest", "Mountain", "Garden", "Flower", "Petal", "Leaf",
+        "Kitten", "Puppy", "Bunny", "Panda", "Tiger", "Dolphin", "Penguin", "Butterfly",
+        "Rocket", "Planet", "Comet", "Galaxy", "Castle", "Dragon", "Wizard", "Knight",
+        "Bubble", "Sparkle", "Glitter", "Jelly", "Candy", "Lollipop", "Marshmallow", "Vanilla",
+        "Friend", "Pillow", "Lantern", "Window", "Puzzle", "Rocketship", "Backpack", "Sandbox",
+        "Music", "Rhythm", "Melody", "Guitar", "Piano", "Dance", "Disco", "Party",
+        "Magic", "Wonder", "Pixel", "Neon", "Flash", "Groovy", "Jumpy", "Bouncy"
       ];
 
       // Deduplicate and clean the word list
@@ -219,17 +143,13 @@
       }
 
       const FADE_MS = 150;
-      const FETCH_TIMEOUT_MS = 2500;
-      const MAX_FETCHED_WORDS = 1000;
-      const MAX_WORD_LENGTH = 30;
       const RESIZE_DEBOUNCE_MS = 100;
-      const REMOTE_WORD_PATTERN = "*ine";
-      const REMOTE_WORDS_URL = `https://api.datamuse.com/words?sp=${REMOTE_WORD_PATTERN}&max=${MAX_FETCHED_WORDS}`;
       const MAX_TEXT_WIDTH_RATIO = 0.8;
-      const MAX_TEXT_HEIGHT_RATIO = 0.8;
       const MAX_FONT_WIDTH_RATIO = 0.18;
       const MAX_FONT_HEIGHT_RATIO = 0.25;
       const MIN_FONT_SIZE_PX = 28;
+      const HINT_CLEARANCE_PX = 24;
+      let cachedHintHeight = null;
 
       function pickRandom(arr, lastIndex) {
         let idx;
@@ -246,12 +166,26 @@
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
       }
 
+      function getHintHeight() {
+        if (cachedHintHeight !== null) return cachedHintHeight;
+        const hintEl = document.getElementById("hint");
+        cachedHintHeight = hintEl ? hintEl.getBoundingClientRect().height : 0;
+        return cachedHintHeight;
+      }
+
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
+        const topWordEl = document.getElementById("top-word");
+        const bottomWordEl = document.getElementById("bottom-word");
         const maxWidthPx = parseFloat(getComputedStyle(document.body).getPropertyValue("--wordmark-max-width"));
         const safeMaxWidthPx = Number.isFinite(maxWidthPx) ? maxWidthPx : window.innerWidth;
         const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, safeMaxWidthPx);
-        const maxHeight = window.innerHeight * MAX_TEXT_HEIGHT_RATIO;
+        const hintHeight = getHintHeight();
+        const bodyStyles = getComputedStyle(document.body);
+        const bodyPaddingTop = parseFloat(bodyStyles.paddingTop) || 0;
+        const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
+        const availableHeight = window.innerHeight - bodyPaddingTop - bodyPaddingBottom - hintHeight - HINT_CLEARANCE_PX;
+        const maxHeight = Math.max(MIN_FONT_SIZE_PX * 2, availableHeight);
         const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
         let low = MIN_FONT_SIZE_PX;
         let high = Math.max(MIN_FONT_SIZE_PX, maxSize);
@@ -260,7 +194,8 @@
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
           wordmarkEl.style.fontSize = `${mid}px`;
-          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight;
+          const hasNoWrapping = topWordEl.getClientRects().length <= 1 && bottomWordEl.getClientRects().length <= 1;
+          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight && hasNoWrapping;
 
           if (fits) {
             best = mid;
@@ -271,40 +206,6 @@
         }
 
         wordmarkEl.style.fontSize = `${best}px`;
-      }
-
-      async function fetchAdditionalWords() {
-        const controller = new AbortController();
-        let timedOut = false;
-        const timeoutId = setTimeout(() => {
-          timedOut = true;
-          controller.abort();
-        }, FETCH_TIMEOUT_MS);
-
-        try {
-          const response = await fetch(REMOTE_WORDS_URL, { signal: controller.signal });
-          if (!response.ok) {
-            throw new Error(`Failed with status ${response.status}`);
-          }
-
-          const data = await response.json();
-          const fetchedWords = (Array.isArray(data) ? data : [])
-            .slice(0, MAX_FETCHED_WORDS)
-            .map(({ word }) => normalizeWord(word))
-            .filter((word) => word && word.length <= MAX_WORD_LENGTH);
-
-          if (fetchedWords.length > 0) {
-            availableWords = [...new Set([...uniqueWords, ...fetchedWords])];
-          } else {
-            availableWords = [...uniqueWords];
-          }
-        } catch (error) {
-          availableWords = [...uniqueWords];
-          const reason = timedOut ? "timeout" : "error";
-          console.warn(`Using local word list due to remote fetch ${reason}.`, error);
-        } finally {
-          clearTimeout(timeoutId);
-        }
       }
 
       function update() {
@@ -324,8 +225,10 @@
           topWordEl.textContent = prefix;
           bottomWordEl.textContent = "Pini";
           wordmarkEl.setAttribute("aria-label", `${prefix} Pini`);
-          fitWordmark();
-          wordmarkEl.style.opacity = "1";
+          requestAnimationFrame(() => {
+            fitWordmark();
+            wordmarkEl.style.opacity = "1";
+          });
         }, FADE_MS);
 
         document.body.style.backgroundColor = bg;
@@ -334,12 +237,13 @@
 
       let resizeTimer = null;
       window.addEventListener("resize", () => {
+        cachedHintHeight = null;
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(fitWordmark, RESIZE_DEBOUNCE_MS);
       });
       document.body.addEventListener("click", update);
       fitWordmark();
-      fetchAdditionalWords();
+      window.addEventListener("load", fitWordmark);
     </script>
   </body>
 </html>
