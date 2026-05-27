@@ -43,41 +43,35 @@
         letter-spacing: -0.02em;
         line-height: 1;
         text-align: center;
-        white-space: normal;
-        overflow-wrap: anywhere;
+        white-space: nowrap;
         transition: opacity 0.15s ease;
         width: 80vw;
         max-width: var(--wordmark-max-width);
       }
 
       #bottom-word {
+        color: inherit;
         animation: rainbowGlow 3s linear infinite;
       }
 
       @keyframes rainbowGlow {
         0% {
-          color: #ff4d4d;
-          text-shadow: 0 0 8px #ff4d4d, 0 0 18px #ff884d;
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #ff4d4d, 0 0 16px #ff884d;
         }
         20% {
-          color: #ffcc4d;
-          text-shadow: 0 0 8px #ffcc4d, 0 0 18px #ffee4d;
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #ffcc4d, 0 0 16px #ffee4d;
         }
         40% {
-          color: #5cff7a;
-          text-shadow: 0 0 8px #5cff7a, 0 0 18px #2cffcc;
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #5cff7a, 0 0 16px #2cffcc;
         }
         60% {
-          color: #4dc3ff;
-          text-shadow: 0 0 8px #4dc3ff, 0 0 18px #4d7dff;
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #4dc3ff, 0 0 16px #4d7dff;
         }
         80% {
-          color: #c26bff;
-          text-shadow: 0 0 8px #c26bff, 0 0 18px #ff66d8;
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #c26bff, 0 0 16px #ff66d8;
         }
         100% {
-          color: #ff4d4d;
-          text-shadow: 0 0 8px #ff4d4d, 0 0 18px #ff884d;
+          text-shadow: 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px #ff4d4d, 0 0 16px #ff884d;
         }
       }
 
@@ -151,10 +145,10 @@
       const FADE_MS = 150;
       const RESIZE_DEBOUNCE_MS = 100;
       const MAX_TEXT_WIDTH_RATIO = 0.8;
-      const MAX_TEXT_HEIGHT_RATIO = 0.8;
       const MAX_FONT_WIDTH_RATIO = 0.18;
       const MAX_FONT_HEIGHT_RATIO = 0.25;
       const MIN_FONT_SIZE_PX = 28;
+      const HINT_CLEARANCE_PX = 24;
 
       function pickRandom(arr, lastIndex) {
         let idx;
@@ -173,10 +167,18 @@
 
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
+        const topWordEl = document.getElementById("top-word");
+        const bottomWordEl = document.getElementById("bottom-word");
+        const hintEl = document.getElementById("hint");
         const maxWidthPx = parseFloat(getComputedStyle(document.body).getPropertyValue("--wordmark-max-width"));
         const safeMaxWidthPx = Number.isFinite(maxWidthPx) ? maxWidthPx : window.innerWidth;
         const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, safeMaxWidthPx);
-        const maxHeight = window.innerHeight * MAX_TEXT_HEIGHT_RATIO;
+        const hintHeight = hintEl ? hintEl.getBoundingClientRect().height : 0;
+        const bodyStyles = getComputedStyle(document.body);
+        const bodyPaddingTop = parseFloat(bodyStyles.paddingTop) || 0;
+        const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
+        const availableHeight = window.innerHeight - bodyPaddingTop - bodyPaddingBottom - hintHeight - HINT_CLEARANCE_PX;
+        const maxHeight = Math.max(MIN_FONT_SIZE_PX * 2, availableHeight);
         const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
         let low = MIN_FONT_SIZE_PX;
         let high = Math.max(MIN_FONT_SIZE_PX, maxSize);
@@ -185,7 +187,8 @@
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
           wordmarkEl.style.fontSize = `${mid}px`;
-          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight;
+          const noWrap = topWordEl.getClientRects().length <= 1 && bottomWordEl.getClientRects().length <= 1;
+          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight && noWrap;
 
           if (fits) {
             best = mid;
@@ -215,8 +218,10 @@
           topWordEl.textContent = prefix;
           bottomWordEl.textContent = "Pini";
           wordmarkEl.setAttribute("aria-label", `${prefix} Pini`);
-          fitWordmark();
-          wordmarkEl.style.opacity = "1";
+          requestAnimationFrame(() => {
+            fitWordmark();
+            wordmarkEl.style.opacity = "1";
+          });
         }, FADE_MS);
 
         document.body.style.backgroundColor = bg;
@@ -230,6 +235,7 @@
       });
       document.body.addEventListener("click", update);
       fitWordmark();
+      window.addEventListener("load", fitWordmark);
     </script>
   </body>
 </html>
