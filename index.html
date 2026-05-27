@@ -33,7 +33,8 @@
         text-align: center;
         white-space: nowrap;
         transition: opacity 0.15s ease;
-        width: 100%;
+        width: 80vw;
+        max-width: 1280px;
       }
 
       #hint {
@@ -50,7 +51,7 @@
   </head>
   <body>
     <h1 id="wordmark" aria-label="Clickini Pini"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></h1>
-    <div id="hint">Click anywhere to change</div>
+    <div id="hint">☝️</div>
 
     <script>
       const words = [
@@ -212,7 +213,8 @@
       const RESIZE_DEBOUNCE_MS = 100;
       const REMOTE_WORD_PATTERN = "*ine";
       const REMOTE_WORDS_URL = `https://api.datamuse.com/words?sp=${REMOTE_WORD_PATTERN}&max=${MAX_FETCHED_WORDS}`;
-      const MAX_TEXT_WIDTH_RATIO = 0.92;
+      const MAX_TEXT_WIDTH_RATIO = 0.8;
+      const MAX_TEXT_WIDTH_PX = 1280;
       const MAX_TEXT_HEIGHT_RATIO = 0.8;
       const MAX_FONT_WIDTH_RATIO = 0.18;
       const MAX_FONT_HEIGHT_RATIO = 0.25;
@@ -235,7 +237,7 @@
 
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
-        const maxWidth = window.innerWidth * MAX_TEXT_WIDTH_RATIO;
+        const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, MAX_TEXT_WIDTH_PX);
         const maxHeight = window.innerHeight * MAX_TEXT_HEIGHT_RATIO;
         const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
         let low = MIN_FONT_SIZE_PX;
