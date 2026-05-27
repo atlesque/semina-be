@@ -228,14 +228,26 @@
         const wordmarkEl = document.getElementById("wordmark");
         const maxWidth = window.innerWidth * 0.92;
         const maxHeight = window.innerHeight * 0.8;
-        let size = Math.min(window.innerWidth * 0.18, window.innerHeight * 0.25);
+        const maxSize = Math.floor(Math.min(window.innerWidth * 0.18, window.innerHeight * 0.25));
         const minSize = 28;
+        let low = minSize;
+        let high = Math.max(minSize, maxSize);
+        let best = minSize;
 
-        wordmarkEl.style.fontSize = `${size}px`;
-        while ((wordmarkEl.scrollWidth > maxWidth || wordmarkEl.scrollHeight > maxHeight) && size > minSize) {
-          size -= 1;
-          wordmarkEl.style.fontSize = `${size}px`;
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          wordmarkEl.style.fontSize = `${mid}px`;
+          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight;
+
+          if (fits) {
+            best = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
         }
+
+        wordmarkEl.style.fontSize = `${best}px`;
       }
 
       async function fetchAdditionalWords() {
@@ -258,9 +270,9 @@
           } else {
             availableWords = [...uniqueWords];
           }
-        } catch (_) {
+        } catch (error) {
           availableWords = [...uniqueWords];
-          console.warn("Using local word list due to remote fetch failure or timeout.");
+          console.warn("Using local word list due to remote fetch failure or timeout.", error);
         } finally {
           lastWordIndex = -1;
           clearTimeout(timeoutId);
@@ -291,7 +303,11 @@
         document.body.style.color = textColor;
       }
 
-      window.addEventListener("resize", fitWordmark);
+      let resizeTimer = null;
+      window.addEventListener("resize", () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(fitWordmark, 100);
+      });
       document.body.addEventListener("click", update);
       fitWordmark();
       fetchAdditionalWords();
