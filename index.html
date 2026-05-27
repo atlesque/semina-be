@@ -211,7 +211,7 @@
       const MAX_WORD_LENGTH = 30;
       const RESIZE_DEBOUNCE_MS = 100;
       const REMOTE_WORD_PATTERN = "*ine";
-      const REMOTE_WORDS_URL = `https://api.datamuse.com/words?sp=${REMOTE_WORD_PATTERN}&max=500`;
+      const REMOTE_WORDS_URL = `https://api.datamuse.com/words?sp=${REMOTE_WORD_PATTERN}&max=${MAX_FETCHED_WORDS}`;
       const MAX_TEXT_WIDTH_RATIO = 0.92;
       const MAX_TEXT_HEIGHT_RATIO = 0.8;
       const MAX_FONT_WIDTH_RATIO = 0.18;
@@ -288,7 +288,6 @@
           const reason = timedOut ? "timeout" : "error";
           console.warn(`Using local word list due to remote fetch ${reason}.`, error);
         } finally {
-          lastWordIndex = -1;
           clearTimeout(timeoutId);
         }
       }
