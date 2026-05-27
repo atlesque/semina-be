@@ -49,7 +49,7 @@
     </style>
   </head>
   <body>
-    <div id="wordmark"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></div>
+    <h1 id="wordmark" aria-label="Clickini Pini"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></h1>
     <div id="hint">Click anywhere to change</div>
 
     <script>
@@ -207,6 +207,7 @@
 
       const FADE_MS = 150;
       const FETCH_TIMEOUT_MS = 2500;
+      const RESIZE_DEBOUNCE_MS = 100;
       const REMOTE_WORDS_URL = "https://api.datamuse.com/words?sp=*ine&max=500";
 
       function pickRandom(arr, lastIndex) {
@@ -252,7 +253,7 @@
 
       async function fetchAdditionalWords() {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => controller.abort("Fetch timeout"), FETCH_TIMEOUT_MS);
 
         try {
           const response = await fetch(REMOTE_WORDS_URL, { signal: controller.signal });
@@ -261,9 +262,10 @@
           }
 
           const data = await response.json();
-          const fetchedWords = data
+          const fetchedWords = (Array.isArray(data) ? data : [])
+            .slice(0, 1000)
             .map(({ word }) => normalizeWord(word))
-            .filter(Boolean);
+            .filter((word) => word && word.length <= 30);
 
           if (fetchedWords.length > 0) {
             availableWords = [...new Set([...uniqueWords, ...fetchedWords])];
@@ -272,7 +274,9 @@
           }
         } catch (error) {
           availableWords = [...uniqueWords];
-          console.warn("Using local word list due to remote fetch failure or timeout.", error);
+          const isTimeout = error && error.name === "AbortError";
+          const reason = isTimeout ? "timeout" : "error";
+          console.warn(`Using local word list due to remote fetch ${reason}.`, error);
         } finally {
           lastWordIndex = -1;
           clearTimeout(timeoutId);
@@ -295,6 +299,7 @@
         setTimeout(() => {
           topWordEl.textContent = prefix;
           bottomWordEl.textContent = "Pini";
+          wordmarkEl.setAttribute("aria-label", `${prefix} Pini`);
           fitWordmark();
           wordmarkEl.style.opacity = "1";
         }, FADE_MS);
@@ -306,7 +311,7 @@
       let resizeTimer = null;
       window.addEventListener("resize", () => {
         if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(fitWordmark, 100);
+        resizeTimer = setTimeout(fitWordmark, RESIZE_DEBOUNCE_MS);
       });
       document.body.addEventListener("click", update);
       fitWordmark();
