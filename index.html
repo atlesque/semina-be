@@ -66,9 +66,8 @@
 
     <script>
       const words = [
-        "Admin", "Fashion", "Pineapple", "Bikini", "Mozzarella", "Gelatin",
-        "Penguin", "Mandarin", "Cappuccino", "Macaroon", "Zucchini",
-        "Linguine", "Martini", "Panini", "Tahini", "Bikini", "Tortellini",
+        "Fashion", "Pineapple", "Mozzarella", "Gelatin",
+        "Penguin", "Mandarin", "Cappuccino", "Macaroon",
         "Tetrahedron", "Stallion", "Champion", "Dragon", "Phantom",
         "Neon", "Falcon", "Ramen", "Balloon", "Cannon", "Mission",
         "Action", "Passion", "Fusion", "Vision", "Nation", "Portion",
@@ -158,7 +157,7 @@
         "Roster", "Poster", "Toaster", "Coaster", "Booster",
         "Rooster", "Cluster", "Bluster", "Muster", "Luster",
         "Punster", "Funster", "Gangster", "Mobster", "Lobster",
-        "Prankster", "Trickster", "Trickster", "Jokester", "Hipster",
+        "Prankster", "Trickster", "Jokester", "Hipster",
         "Webster", "Forester", "Semester", "Canister", "Register",
         "Minister", "Sinister", "Spinster", "Songster", "Youngster",
         "Banister", "Holster", "Bolster", "Polyester", "Winchester",
@@ -217,6 +216,8 @@
         return lum > 0.35 ? "#1a1a1a" : "#ffffff";
       }
 
+      const FADE_MS = 150;
+
       function pickRandom(arr, lastIndex) {
         let idx;
         do {
@@ -239,7 +240,7 @@
         setTimeout(() => {
           prefixEl.textContent = prefix;
           prefixEl.style.opacity = "1";
-        }, 120);
+        }, FADE_MS);
 
         document.body.style.backgroundColor = bg;
         document.body.style.color = textColor;
