@@ -14,37 +14,26 @@
       body {
         min-height: 100vh;
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         cursor: pointer;
         user-select: none;
         transition: background-color 0.4s ease, color 0.4s ease;
-        padding: 5vh 4vw;
+        padding: 4vh 4vw;
         background-color: #ff6b6b;
         color: #1a1a1a;
+        overflow: hidden;
       }
 
-      #prefix {
-        font-size: clamp(4rem, 14vw, 18rem);
+      #wordmark {
         font-weight: 900;
         font-family: 'Arial Black', 'Impact', sans-serif;
         letter-spacing: -0.02em;
         line-height: 1;
         text-align: center;
-        word-break: break-word;
+        white-space: nowrap;
         transition: opacity 0.15s ease;
-      }
-
-      #suffix {
-        font-size: clamp(4rem, 14vw, 18rem);
-        font-weight: 900;
-        font-family: 'Arial Black', 'Impact', sans-serif;
-        letter-spacing: -0.02em;
-        line-height: 1;
-        text-align: center;
-        word-break: break-word;
-        opacity: 0.75;
+        width: 100%;
       }
 
       #hint {
@@ -60,8 +49,7 @@
     </style>
   </head>
   <body>
-    <div id="prefix">Clickini</div>
-    <div id="suffix">Pini</div>
+    <div id="wordmark">Clickini<br>Pini</div>
     <div id="hint">Click anywhere to change</div>
 
     <script>
@@ -182,6 +170,7 @@
 
       // Deduplicate and clean the word list
       const uniqueWords = [...new Set(words)];
+      let availableWords = [...uniqueWords];
 
       // Vibrant background palette: hue values to cycle through
       const bgColors = [
@@ -217,6 +206,8 @@
       }
 
       const FADE_MS = 150;
+      const FETCH_TIMEOUT_MS = 2500;
+      const REMOTE_WORDS_URL = "https://api.datamuse.com/words?sp=*ine&max=500";
 
       function pickRandom(arr, lastIndex) {
         let idx;
@@ -226,8 +217,56 @@
         return { value: arr[idx], index: idx };
       }
 
+      function normalizeWord(rawWord) {
+        if (typeof rawWord !== "string") return null;
+        const cleaned = rawWord.trim().replace(/[^a-zA-ZÀ-ÿ'-]/g, "");
+        if (!cleaned) return null;
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+      }
+
+      function fitWordmark() {
+        const wordmarkEl = document.getElementById("wordmark");
+        const maxWidth = window.innerWidth * 0.92;
+        const maxHeight = window.innerHeight * 0.8;
+        let size = Math.min(window.innerWidth * 0.18, window.innerHeight * 0.25);
+        const minSize = 28;
+
+        wordmarkEl.style.fontSize = `${size}px`;
+        while ((wordmarkEl.scrollWidth > maxWidth || wordmarkEl.scrollHeight > maxHeight) && size > minSize) {
+          size -= 1;
+          wordmarkEl.style.fontSize = `${size}px`;
+        }
+      }
+
+      async function fetchAdditionalWords() {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+        try {
+          const response = await fetch(REMOTE_WORDS_URL, { signal: controller.signal });
+          if (!response.ok) {
+            throw new Error(`Failed with status ${response.status}`);
+          }
+
+          const data = await response.json();
+          const fetchedWords = data
+            .map(({ word }) => normalizeWord(word))
+            .filter(Boolean);
+
+          if (fetchedWords.length > 0) {
+            availableWords = [...new Set([...uniqueWords, ...fetchedWords])];
+          } else {
+            availableWords = [...uniqueWords];
+          }
+        } catch (_) {
+          availableWords = [...uniqueWords];
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
       function update() {
-        const { value: word, index: wordIdx } = pickRandom(uniqueWords, lastWordIndex);
+        const { value: word, index: wordIdx } = pickRandom(availableWords, lastWordIndex);
         lastWordIndex = wordIdx;
         const { value: bg, index: bgIdx } = pickRandom(bgColors, lastBgIndex);
         lastBgIndex = bgIdx;
@@ -235,18 +274,22 @@
         const prefix = word + "ini";
         const textColor = getTextColor(bg);
 
-        const prefixEl = document.getElementById("prefix");
-        prefixEl.style.opacity = "0";
+        const wordmarkEl = document.getElementById("wordmark");
+        wordmarkEl.style.opacity = "0";
         setTimeout(() => {
-          prefixEl.textContent = prefix;
-          prefixEl.style.opacity = "1";
+          wordmarkEl.innerHTML = `${prefix}<br>Pini`;
+          fitWordmark();
+          wordmarkEl.style.opacity = "1";
         }, FADE_MS);
 
         document.body.style.backgroundColor = bg;
         document.body.style.color = textColor;
       }
 
+      window.addEventListener("resize", fitWordmark);
       document.body.addEventListener("click", update);
+      fitWordmark();
+      fetchAdditionalWords();
     </script>
   </body>
 </html>
