@@ -208,8 +208,15 @@
       const FADE_MS = 150;
       const FETCH_TIMEOUT_MS = 2500;
       const MAX_FETCHED_WORDS = 1000;
+      const MAX_WORD_LENGTH = 30;
       const RESIZE_DEBOUNCE_MS = 100;
-      const REMOTE_WORDS_URL = "https://api.datamuse.com/words?sp=*ine&max=500";
+      const REMOTE_WORD_PATTERN = "*ine";
+      const REMOTE_WORDS_URL = `https://api.datamuse.com/words?sp=${REMOTE_WORD_PATTERN}&max=500`;
+      const MAX_TEXT_WIDTH_RATIO = 0.92;
+      const MAX_TEXT_HEIGHT_RATIO = 0.8;
+      const MAX_FONT_WIDTH_RATIO = 0.18;
+      const MAX_FONT_HEIGHT_RATIO = 0.25;
+      const MIN_FONT_SIZE_PX = 28;
 
       function pickRandom(arr, lastIndex) {
         let idx;
@@ -228,13 +235,12 @@
 
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
-        const maxWidth = window.innerWidth * 0.92;
-        const maxHeight = window.innerHeight * 0.8;
-        const maxSize = Math.floor(Math.min(window.innerWidth * 0.18, window.innerHeight * 0.25));
-        const minSize = 28;
-        let low = minSize;
-        let high = Math.max(minSize, maxSize);
-        let best = minSize;
+        const maxWidth = window.innerWidth * MAX_TEXT_WIDTH_RATIO;
+        const maxHeight = window.innerHeight * MAX_TEXT_HEIGHT_RATIO;
+        const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
+        let low = MIN_FONT_SIZE_PX;
+        let high = Math.max(MIN_FONT_SIZE_PX, maxSize);
+        let best = MIN_FONT_SIZE_PX;
 
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
@@ -270,7 +276,7 @@
           const fetchedWords = (Array.isArray(data) ? data : [])
             .slice(0, MAX_FETCHED_WORDS)
             .map(({ word }) => normalizeWord(word))
-            .filter((word) => word && word.length <= 30);
+            .filter((word) => word && word.length <= MAX_WORD_LENGTH);
 
           if (fetchedWords.length > 0) {
             availableWords = [...new Set([...uniqueWords, ...fetchedWords])];
