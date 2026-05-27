@@ -12,6 +12,7 @@
       }
 
       body {
+        --wordmark-max-width: 1280px;
         min-height: 100vh;
         display: flex;
         justify-content: center;
@@ -34,7 +35,7 @@
         white-space: nowrap;
         transition: opacity 0.15s ease;
         width: 80vw;
-        max-width: 1280px;
+        max-width: var(--wordmark-max-width);
       }
 
       #hint {
@@ -51,7 +52,7 @@
   </head>
   <body>
     <h1 id="wordmark" aria-label="Clickini Pini"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></h1>
-    <div id="hint" aria-label="Click anywhere to change">☝️</div>
+    <div id="hint" aria-label="Click anywhere to change"><span aria-hidden="true">☝️</span></div>
 
     <script>
       const words = [
@@ -236,11 +237,9 @@
 
       function fitWordmark() {
         const wordmarkEl = document.getElementById("wordmark");
-        const computedMaxWidth = getComputedStyle(wordmarkEl).maxWidth;
-        const maxWidthPx = computedMaxWidth.endsWith("px")
-          ? parseFloat(computedMaxWidth)
-          : Number.POSITIVE_INFINITY;
-        const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, maxWidthPx);
+        const maxWidthPx = parseFloat(getComputedStyle(document.body).getPropertyValue("--wordmark-max-width"));
+        const safeMaxWidthPx = Number.isFinite(maxWidthPx) ? maxWidthPx : window.innerWidth;
+        const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, safeMaxWidthPx);
         const maxHeight = window.innerHeight * MAX_TEXT_HEIGHT_RATIO;
         const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
         let low = MIN_FONT_SIZE_PX;
