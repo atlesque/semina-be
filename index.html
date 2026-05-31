@@ -60,10 +60,14 @@
         line-height: 1;
         text-align: center;
         white-space: nowrap;
-        transition: opacity 0.15s ease;
+        transition:
+          opacity 0.15s ease,
+          transform 0.12s ease-out;
         width: 80vw;
         max-width: var(--wordmark-max-width);
         text-shadow: var(--outline-shadow);
+        transform-style: preserve-3d;
+        will-change: transform;
       }
 
       #bottom-word {
@@ -151,6 +155,12 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         pointer-events: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #wordmark {
+          transition: opacity 0.15s ease;
+        }
       }
     </style>
   </head>
@@ -284,7 +294,19 @@
       const MAX_FONT_HEIGHT_RATIO = 0.25;
       const MIN_FONT_SIZE_PX = 28;
       const HINT_CLEARANCE_PX = 24;
+      const MAX_TILT_DEG_DESKTOP = 12;
+      const MAX_TILT_DEG_MOBILE = 16;
+      const TILT_EASING = 0.14;
       let cachedHintHeight = null;
+      let currentTiltX = 0;
+      let currentTiltY = 0;
+      let targetTiltX = 0;
+      let targetTiltY = 0;
+      let tiltAnimationFrame = null;
+
+      const useGyroTilt = window.matchMedia(
+        "(hover: none) and (pointer: coarse)",
+      ).matches;
 
       function pickRandom(arr, lastIndex) {
         let idx;
@@ -366,6 +388,92 @@
         const hintEl = document.getElementById("hint");
         cachedHintHeight = hintEl ? hintEl.getBoundingClientRect().height : 0;
         return cachedHintHeight;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function applyWordmarkTilt() {
+        const wordmarkEl = document.getElementById("wordmark");
+        wordmarkEl.style.transform = `rotateX(${currentTiltX.toFixed(2)}deg) rotateY(${currentTiltY.toFixed(2)}deg)`;
+      }
+
+      function animateTilt() {
+        currentTiltX += (targetTiltX - currentTiltX) * TILT_EASING;
+        currentTiltY += (targetTiltY - currentTiltY) * TILT_EASING;
+        applyWordmarkTilt();
+
+        const settled =
+          Math.abs(targetTiltX - currentTiltX) < 0.02 &&
+          Math.abs(targetTiltY - currentTiltY) < 0.02;
+
+        if (settled) {
+          currentTiltX = targetTiltX;
+          currentTiltY = targetTiltY;
+          applyWordmarkTilt();
+          tiltAnimationFrame = null;
+          return;
+        }
+
+        tiltAnimationFrame = requestAnimationFrame(animateTilt);
+      }
+
+      function setTiltTarget(nextTiltX, nextTiltY) {
+        targetTiltX = nextTiltX;
+        targetTiltY = nextTiltY;
+        if (tiltAnimationFrame === null) {
+          tiltAnimationFrame = requestAnimationFrame(animateTilt);
+        }
+      }
+
+      function setTiltFromPointer(clientX, clientY) {
+        const normalizedX = clamp((clientX / window.innerWidth) * 2 - 1, -1, 1);
+        const normalizedY = clamp(
+          (clientY / window.innerHeight) * 2 - 1,
+          -1,
+          1,
+        );
+        setTiltTarget(
+          normalizedY * MAX_TILT_DEG_DESKTOP,
+          -normalizedX * MAX_TILT_DEG_DESKTOP,
+        );
+      }
+
+      function handleDeviceOrientation(event) {
+        if (typeof event.beta !== "number" || typeof event.gamma !== "number") {
+          return;
+        }
+
+        const normalizedBeta = clamp(event.beta / 35, -1, 1);
+        const normalizedGamma = clamp(event.gamma / 35, -1, 1);
+        setTiltTarget(
+          normalizedBeta * MAX_TILT_DEG_MOBILE,
+          -normalizedGamma * MAX_TILT_DEG_MOBILE,
+        );
+      }
+
+      async function enableGyroTilt() {
+        if (
+          !useGyroTilt ||
+          typeof window.DeviceOrientationEvent === "undefined"
+        ) {
+          return;
+        }
+
+        if (
+          typeof window.DeviceOrientationEvent.requestPermission === "function"
+        ) {
+          const permission =
+            await window.DeviceOrientationEvent.requestPermission();
+          if (permission !== "granted") {
+            return;
+          }
+        }
+
+        window.addEventListener("deviceorientation", handleDeviceOrientation, {
+          passive: true,
+        });
       }
 
       function fitWordmark() {
@@ -462,6 +570,32 @@
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(fitWordmark, RESIZE_DEBOUNCE_MS);
       });
+
+      if (useGyroTilt) {
+        enableGyroTilt().catch(() => {});
+        const unlockGyroTilt = () => {
+          enableGyroTilt().catch(() => {});
+        };
+        window.addEventListener("touchstart", unlockGyroTilt, {
+          passive: true,
+          once: true,
+        });
+        window.addEventListener("pointerdown", unlockGyroTilt, {
+          passive: true,
+          once: true,
+        });
+      } else {
+        window.addEventListener(
+          "mousemove",
+          (event) => {
+            setTiltFromPointer(event.clientX, event.clientY);
+          },
+          { passive: true },
+        );
+        window.addEventListener("mouseleave", () => setTiltTarget(0, 0));
+        window.addEventListener("blur", () => setTiltTarget(0, 0));
+      }
+
       document.body.addEventListener("click", (e) => {
         createConfetti(e.clientX, e.clientY);
         update();
