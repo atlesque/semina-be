@@ -99,7 +99,7 @@
     <div id="hint" aria-label="Click anywhere to change"><span aria-hidden="true">☝️</span></div>
 
     <script>
-      const words = [
+      const basicWords = [
         "Apple", "Banana", "Orange", "Mango", "Lemon", "Peach", "Cherry", "Berry",
         "Cookie", "Muffin", "Waffle", "Pancake", "Noodle", "Pizza", "Burger", "Taco",
         "Rainbow", "Sunshine", "Starlight", "Moonlight", "Cloud", "Thunder", "Breeze", "Meadow",
@@ -111,9 +111,10 @@
         "Music", "Rhythm", "Melody", "Guitar", "Piano", "Dance", "Disco", "Party",
         "Magic", "Wonder", "Pixel", "Neon", "Flash", "Groovy", "Jumpy", "Bouncy"
       ];
+      const customWords = ["Admin", "Shauni", "MBP", "Analist", "Macedoni", "Fashion"];
 
       // Deduplicate and clean the word list
-      const uniqueWords = [...new Set(words)];
+      const uniqueWords = [...new Set([...basicWords, ...customWords])];
       let availableWords = [...uniqueWords];
 
       // Vibrant background palette: hue values to cycle through
