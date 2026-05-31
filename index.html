@@ -127,7 +127,7 @@
         "Music", "Rhythm", "Melody", "Guitar", "Piano", "Dance", "Disco", "Party",
         "Magic", "Wonder", "Pixel", "Neon", "Flash", "Groovy", "Jumpy", "Bouncy"
       ];
-      const customWords = ["Admin", "Shauni", "MBP", "Analist", "Macedoni", "Fashion"];
+      const customWords = ["Admin", "Shauni", "MBP", "Analist", "Macedonia", "Fashion"];
 
       // Merge + deduplicate, then shuffle and loop through all words
       const allWords = [...new Set([...basicWords, ...customWords])];
@@ -204,8 +204,10 @@
       }
 
       function applyDisplayWord(word) {
-        const suffixed = word + "ini";
-        return suffixed.endsWith("eini") ? suffixed.slice(0, -4) + "ini" : suffixed;
+        if (word.endsWith("ie")) return word.slice(0, -2) + "ini";
+        if (word.endsWith("ia")) return word.slice(0, -2) + "ini";
+        if (/[aeiouy]$/i.test(word)) return word.slice(0, -1) + "ini";
+        return word + "ini";
       }
 
       function createConfetti(x, y) {
