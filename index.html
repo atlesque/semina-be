@@ -26,6 +26,15 @@
 
       body {
         --wordmark-max-width: 1280px;
+        --outline-shadow:
+          -2px -2px 0 #000,
+          0 -2px 0 #000,
+          2px -2px 0 #000,
+          -2px 0 0 #000,
+          2px 0 0 #000,
+          -2px 2px 0 #000,
+          0 2px 0 #000,
+          2px 2px 0 #000;
         min-height: 100vh;
         display: flex;
         justify-content: center;
@@ -40,7 +49,6 @@
       }
 
       #wordmark {
-        --outline-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
         font-weight: 400;
         font-family: 'Bangers', 'Arial Black', 'Impact', sans-serif;
         letter-spacing: 0.05em;
@@ -50,9 +58,6 @@
         transition: opacity 0.15s ease;
         width: 80vw;
         max-width: var(--wordmark-max-width);
-        -webkit-text-stroke: 0.09em #000;
-        text-stroke: 0.09em #000;
-        paint-order: stroke fill;
         text-shadow: var(--outline-shadow);
       }
 
