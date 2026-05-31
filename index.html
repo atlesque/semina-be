@@ -113,9 +113,11 @@
       ];
       const customWords = ["Admin", "Shauni", "MBP", "Analist", "Macedoni", "Fashion"];
 
-      // Deduplicate and clean the word list
-      const uniqueWords = [...new Set([...basicWords, ...customWords])];
-      let availableWords = [...uniqueWords];
+      // Merge + deduplicate, then shuffle and loop through all words
+      const allWords = [...new Set([...basicWords, ...customWords])];
+      let shuffledWords = [];
+      let shuffledWordIndex = 0;
+      let lastWord = null;
 
       // Vibrant background palette: hue values to cycle through
       const bgColors = [
@@ -135,7 +137,6 @@
       ];
 
       let lastBgIndex = -1;
-      let lastWordIndex = -1;
 
       function getRelativeLuminance(hex) {
         const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -165,6 +166,31 @@
           idx = Math.floor(Math.random() * arr.length);
         } while (idx === lastIndex && arr.length > 1);
         return { value: arr[idx], index: idx };
+      }
+
+      function shuffleInPlace(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      function refillShuffledWords() {
+        shuffledWords = [...allWords];
+        shuffleInPlace(shuffledWords);
+        if (shuffledWords.length > 1 && shuffledWords[0] === lastWord) {
+          [shuffledWords[0], shuffledWords[1]] = [shuffledWords[1], shuffledWords[0]];
+        }
+        shuffledWordIndex = 0;
+      }
+
+      function getNextWord() {
+        if (shuffledWordIndex >= shuffledWords.length) {
+          refillShuffledWords();
+        }
+        const word = shuffledWords[shuffledWordIndex++];
+        lastWord = word;
+        return word;
       }
 
       function normalizeWord(rawWord) {
@@ -247,8 +273,7 @@
       }
 
       function update() {
-        const { value: word, index: wordIdx } = pickRandom(availableWords, lastWordIndex);
-        lastWordIndex = wordIdx;
+        const word = getNextWord();
         const { value: bg, index: bgIdx } = pickRandom(bgColors, lastBgIndex);
         lastBgIndex = bgIdx;
 
