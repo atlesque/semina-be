@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,7 +7,10 @@
     <meta name="description" content="Pinininini" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bangers&display=swap"
+      rel="stylesheet"
+    />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://semina.be/" />
     <meta property="og:title" content="Pini" />
@@ -15,7 +18,10 @@
     <meta property="og:image" content="https://semina.be/og-image.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Pini" />
-    <meta name="twitter:description" content="Click anywhere to generate a new silly word ending in -ini. A fun, colorful wordmark generator." />
+    <meta
+      name="twitter:description"
+      content="Click anywhere to generate a new silly word ending in -ini. A fun, colorful wordmark generator."
+    />
     <meta name="twitter:image" content="https://semina.be/og-image.png" />
     <style>
       * {
@@ -27,27 +33,20 @@
       body {
         --wordmark-max-width: 1280px;
         --outline-shadow:
-          -2px -2px 0 #000,
-          0 -2px 0 #000,
-          2px -2px 0 #000,
-          -2px 0 0 #000,
-          2px 0 0 #000,
-          -2px 2px 0 #000,
-          0 2px 0 #000,
-          2px 2px 0 #000,
-          -3px 3px 0 rgba(0,0,0,0.85),
-          -5px 5px 0 rgba(0,0,0,0.7),
-          -7px 7px 0 rgba(0,0,0,0.55),
-          -9px 9px 0 rgba(0,0,0,0.4),
-          -11px 11px 0 rgba(0,0,0,0.25),
-          -13px 13px 0 rgba(0,0,0,0.12);
+          -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, -2px 0 0 #000,
+          2px 0 0 #000, -2px 2px 0 #000, 0 2px 0 #000, 2px 2px 0 #000,
+          -3px 3px 0 rgba(0, 0, 0, 0.85), -5px 5px 0 rgba(0, 0, 0, 0.7),
+          -7px 7px 0 rgba(0, 0, 0, 0.55), -9px 9px 0 rgba(0, 0, 0, 0.4),
+          -11px 11px 0 rgba(0, 0, 0, 0.25), -13px 13px 0 rgba(0, 0, 0, 0.12);
         min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         cursor: pointer;
         user-select: none;
-        transition: background-color 0.4s ease, color 0.4s ease;
+        transition:
+          background-color 0.4s ease,
+          color 0.4s ease;
         padding: 4vh 4vw;
         background-color: #ff6b6b;
         color: #ffffff;
@@ -56,7 +55,7 @@
 
       #wordmark {
         font-weight: 400;
-        font-family: 'Bangers', 'Arial Black', 'Impact', sans-serif;
+        font-family: "Bangers", "Arial Black", "Impact", sans-serif;
         letter-spacing: 0.05em;
         line-height: 1;
         text-align: center;
@@ -76,13 +75,51 @@
       }
 
       @keyframes rainbowGlowFadeOut {
-        0%   { text-shadow: var(--outline-shadow), 0 0 2px rgba(255,255,255,0.7), 0 0 10px #ff4d4d, 0 0 20px #ff884d; }
-        16%  { text-shadow: var(--outline-shadow), 0 0 2px rgba(255,255,255,0.7), 0 0 10px #ffcc4d, 0 0 20px #ffee4d; }
-        33%  { text-shadow: var(--outline-shadow), 0 0 2px rgba(255,255,255,0.7), 0 0 10px #5cff7a, 0 0 20px #2cffcc; }
-        50%  { text-shadow: var(--outline-shadow), 0 0 2px rgba(255,255,255,0.7), 0 0 10px #4dc3ff, 0 0 20px #4d7dff; }
-        67%  { text-shadow: var(--outline-shadow), 0 0 2px rgba(255,255,255,0.7), 0 0 10px #c26bff, 0 0 20px #ff66d8; }
-        83%  { text-shadow: var(--outline-shadow), 0 0 2px rgba(255,255,255,0.7), 0 0 10px #ff4d4d, 0 0 20px #ff884d; }
-        100% { text-shadow: var(--outline-shadow); }
+        0% {
+          text-shadow:
+            var(--outline-shadow),
+            0 0 2px rgba(255, 255, 255, 0.7),
+            0 0 10px #ff4d4d,
+            0 0 20px #ff884d;
+        }
+        16% {
+          text-shadow:
+            var(--outline-shadow),
+            0 0 2px rgba(255, 255, 255, 0.7),
+            0 0 10px #ffcc4d,
+            0 0 20px #ffee4d;
+        }
+        33% {
+          text-shadow:
+            var(--outline-shadow),
+            0 0 2px rgba(255, 255, 255, 0.7),
+            0 0 10px #5cff7a,
+            0 0 20px #2cffcc;
+        }
+        50% {
+          text-shadow:
+            var(--outline-shadow),
+            0 0 2px rgba(255, 255, 255, 0.7),
+            0 0 10px #4dc3ff,
+            0 0 20px #4d7dff;
+        }
+        67% {
+          text-shadow:
+            var(--outline-shadow),
+            0 0 2px rgba(255, 255, 255, 0.7),
+            0 0 10px #c26bff,
+            0 0 20px #ff66d8;
+        }
+        83% {
+          text-shadow:
+            var(--outline-shadow),
+            0 0 2px rgba(255, 255, 255, 0.7),
+            0 0 10px #ff4d4d,
+            0 0 20px #ff884d;
+        }
+        100% {
+          text-shadow: var(--outline-shadow);
+        }
       }
 
       .confetti-flower {
@@ -94,8 +131,15 @@
       }
 
       @keyframes confettiFly {
-        0%   { transform: translate(-50%, -50%) rotate(0deg) scale(1);    opacity: 1; }
-        100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(0.4); opacity: 0; }
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
+            rotate(var(--rot)) scale(0.4);
+          opacity: 0;
+        }
       }
 
       #hint {
@@ -111,23 +155,106 @@
     </style>
   </head>
   <body>
-    <h1 id="wordmark" aria-label="Clickini Pini"><span id="top-word">Clickini</span><br><span id="bottom-word">Pini</span></h1>
-    <div id="hint" aria-label="Click anywhere to change"><span aria-hidden="true">☝️</span></div>
+    <h1 id="wordmark" aria-label="Clickini Pini">
+      <span id="top-word">Clickini</span><br /><span id="bottom-word"
+        >Pini</span
+      >
+    </h1>
+    <div id="hint" aria-label="Click anywhere to change">
+      <span aria-hidden="true">☝️</span>
+    </div>
 
     <script>
       const basicWords = [
-        "Apple", "Banana", "Orange", "Mango", "Lemon", "Peach", "Cherry", "Berry",
-        "Cookie", "Muffin", "Waffle", "Pancake", "Noodle", "Pizza", "Burger", "Taco",
-        "Rainbow", "Sunshine", "Starlight", "Moonlight", "Cloud", "Thunder", "Breeze", "Meadow",
-        "River", "Ocean", "Forest", "Mountain", "Garden", "Flower", "Petal", "Leaf",
-        "Kitten", "Puppy", "Bunny", "Panda", "Tiger", "Dolphin", "Penguin", "Butterfly",
-        "Rocket", "Planet", "Comet", "Galaxy", "Castle", "Dragon", "Wizard", "Knight",
-        "Bubble", "Sparkle", "Glitter", "Jelly", "Candy", "Lollipop", "Marshmallow", "Vanilla",
-        "Friend", "Pillow", "Lantern", "Window", "Puzzle", "Rocketship", "Backpack", "Sandbox",
-        "Music", "Rhythm", "Melody", "Guitar", "Piano", "Dance", "Disco", "Party",
-        "Magic", "Wonder", "Pixel", "Neon", "Flash", "Groovy", "Jumpy", "Bouncy"
+        "Apple",
+        "Banana",
+        "Orange",
+        "Mango",
+        "Lemon",
+        "Peach",
+        "Cherry",
+        "Berry",
+        "Cookie",
+        "Muffin",
+        "Waffle",
+        "Pancake",
+        "Noodle",
+        "Pizza",
+        "Burger",
+        "Taco",
+        "Rainbow",
+        "Sunshine",
+        "Starlight",
+        "Moonlight",
+        "Cloud",
+        "Thunder",
+        "Breeze",
+        "Meadow",
+        "River",
+        "Ocean",
+        "Forest",
+        "Mountain",
+        "Garden",
+        "Flower",
+        "Petal",
+        "Leaf",
+        "Kitten",
+        "Puppy",
+        "Bunny",
+        "Panda",
+        "Tiger",
+        "Dolphin",
+        "Penguin",
+        "Butterfly",
+        "Rocket",
+        "Planet",
+        "Comet",
+        "Galaxy",
+        "Castle",
+        "Dragon",
+        "Wizard",
+        "Knight",
+        "Bubble",
+        "Sparkle",
+        "Glitter",
+        "Jelly",
+        "Candy",
+        "Lollipop",
+        "Marshmallow",
+        "Vanilla",
+        "Friend",
+        "Pillow",
+        "Lantern",
+        "Window",
+        "Puzzle",
+        "Rocketship",
+        "Backpack",
+        "Sandbox",
+        "Music",
+        "Rhythm",
+        "Melody",
+        "Guitar",
+        "Piano",
+        "Dance",
+        "Disco",
+        "Party",
+        "Magic",
+        "Wonder",
+        "Pixel",
+        "Neon",
+        "Flash",
+        "Groovy",
+        "Jumpy",
+        "Bouncy",
       ];
-      const customWords = ["Admin", "Shauni", "MBP", "Analist", "Macedonia", "Fashion"];
+      const customWords = [
+        "Admin",
+        "Shauni",
+        "MBP",
+        "Analist",
+        "Macedonia",
+        "Fashion",
+      ];
 
       // Merge + deduplicate, then shuffle and loop through all words
       const allWords = [...new Set([...basicWords, ...customWords])];
@@ -137,19 +264,71 @@
 
       // Vibrant background palette: hue values to cycle through
       const bgColors = [
-        "#ff6b6b", "#ffa94d", "#ffd43b", "#a9e34b", "#40c057",
-        "#20c997", "#22b8cf", "#339af0", "#5c7cfa", "#845ef7",
-        "#cc5de8", "#f06595", "#ff8787", "#ffc078", "#ffe066",
-        "#c0eb75", "#63e6be", "#74c0fc", "#91a7ff", "#da77f2",
-        "#e64980", "#d6336c", "#f03e3e", "#e8590c", "#f59f00",
-        "#2f9e44", "#0ca678", "#1098ad", "#1971c2", "#7048e8",
-        "#b5179e", "#7209b7", "#480ca8", "#3a0ca3", "#023e8a",
-        "#006d77", "#264653", "#2a9d8f", "#e9c46a", "#f4a261",
-        "#e76f51", "#8ecae6", "#219ebc", "#023047", "#ffb703",
-        "#fb8500", "#00b4d8", "#0096c7", "#0077b6", "#023e8a",
-        "#d62828", "#f77f00", "#fcbf49", "#eae2b7", "#003049",
-        "#6a994e", "#386641", "#bc4749", "#a7c957", "#f2e8cf",
-        "#e9c46a", "#57cc99", "#80ed99", "#38a3a5", "#22577a"
+        "#ff6b6b",
+        "#ffa94d",
+        "#ffd43b",
+        "#a9e34b",
+        "#40c057",
+        "#20c997",
+        "#22b8cf",
+        "#339af0",
+        "#5c7cfa",
+        "#845ef7",
+        "#cc5de8",
+        "#f06595",
+        "#ff8787",
+        "#ffc078",
+        "#ffe066",
+        "#c0eb75",
+        "#63e6be",
+        "#74c0fc",
+        "#91a7ff",
+        "#da77f2",
+        "#e64980",
+        "#d6336c",
+        "#f03e3e",
+        "#e8590c",
+        "#f59f00",
+        "#2f9e44",
+        "#0ca678",
+        "#1098ad",
+        "#1971c2",
+        "#7048e8",
+        "#b5179e",
+        "#7209b7",
+        "#480ca8",
+        "#3a0ca3",
+        "#023e8a",
+        "#006d77",
+        "#264653",
+        "#2a9d8f",
+        "#e9c46a",
+        "#f4a261",
+        "#e76f51",
+        "#8ecae6",
+        "#219ebc",
+        "#023047",
+        "#ffb703",
+        "#fb8500",
+        "#00b4d8",
+        "#0096c7",
+        "#0077b6",
+        "#023e8a",
+        "#d62828",
+        "#f77f00",
+        "#fcbf49",
+        "#eae2b7",
+        "#003049",
+        "#6a994e",
+        "#386641",
+        "#bc4749",
+        "#a7c957",
+        "#f2e8cf",
+        "#e9c46a",
+        "#57cc99",
+        "#80ed99",
+        "#38a3a5",
+        "#22577a",
       ];
 
       let lastBgIndex = -1;
@@ -182,7 +361,10 @@
         shuffledWords = [...allWords];
         shuffleInPlace(shuffledWords);
         if (shuffledWords.length > 1 && shuffledWords[0] === lastWord) {
-          [shuffledWords[0], shuffledWords[1]] = [shuffledWords[1], shuffledWords[0]];
+          [shuffledWords[0], shuffledWords[1]] = [
+            shuffledWords[1],
+            shuffledWords[0],
+          ];
         }
         shuffledWordIndex = 0;
       }
@@ -246,16 +428,35 @@
         const wordmarkEl = document.getElementById("wordmark");
         const topWordEl = document.getElementById("top-word");
         const bottomWordEl = document.getElementById("bottom-word");
-        const maxWidthPx = parseFloat(getComputedStyle(document.body).getPropertyValue("--wordmark-max-width"));
-        const safeMaxWidthPx = Number.isFinite(maxWidthPx) ? maxWidthPx : window.innerWidth;
-        const maxWidth = Math.min(window.innerWidth * MAX_TEXT_WIDTH_RATIO, safeMaxWidthPx);
+        const maxWidthPx = parseFloat(
+          getComputedStyle(document.body).getPropertyValue(
+            "--wordmark-max-width",
+          ),
+        );
+        const safeMaxWidthPx = Number.isFinite(maxWidthPx)
+          ? maxWidthPx
+          : window.innerWidth;
+        const maxWidth = Math.min(
+          window.innerWidth * MAX_TEXT_WIDTH_RATIO,
+          safeMaxWidthPx,
+        );
         const hintHeight = getHintHeight();
         const bodyStyles = getComputedStyle(document.body);
         const bodyPaddingTop = parseFloat(bodyStyles.paddingTop) || 0;
         const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
-        const availableHeight = window.innerHeight - bodyPaddingTop - bodyPaddingBottom - hintHeight - HINT_CLEARANCE_PX;
+        const availableHeight =
+          window.innerHeight -
+          bodyPaddingTop -
+          bodyPaddingBottom -
+          hintHeight -
+          HINT_CLEARANCE_PX;
         const maxHeight = Math.max(MIN_FONT_SIZE_PX * 2, availableHeight);
-        const maxSize = Math.floor(Math.min(window.innerWidth * MAX_FONT_WIDTH_RATIO, window.innerHeight * MAX_FONT_HEIGHT_RATIO));
+        const maxSize = Math.floor(
+          Math.min(
+            window.innerWidth * MAX_FONT_WIDTH_RATIO,
+            window.innerHeight * MAX_FONT_HEIGHT_RATIO,
+          ),
+        );
         let low = MIN_FONT_SIZE_PX;
         let high = Math.max(MIN_FONT_SIZE_PX, maxSize);
         let best = MIN_FONT_SIZE_PX;
@@ -263,8 +464,13 @@
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
           wordmarkEl.style.fontSize = `${mid}px`;
-          const hasNoWrapping = topWordEl.getClientRects().length <= 1 && bottomWordEl.getClientRects().length <= 1;
-          const fits = wordmarkEl.scrollWidth <= maxWidth && wordmarkEl.scrollHeight <= maxHeight && hasNoWrapping;
+          const hasNoWrapping =
+            topWordEl.getClientRects().length <= 1 &&
+            bottomWordEl.getClientRects().length <= 1;
+          const fits =
+            wordmarkEl.scrollWidth <= maxWidth &&
+            wordmarkEl.scrollHeight <= maxHeight &&
+            hasNoWrapping;
 
           if (fits) {
             best = mid;
