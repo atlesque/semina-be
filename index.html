@@ -301,6 +301,8 @@
       let targetTiltX = 0;
       let targetTiltY = 0;
       let tiltAnimationFrame = null;
+      let gyroTiltEnabled = false;
+      let gyroListenerAttached = false;
 
       const useGyroTilt = window.matchMedia(
         "(hover: none) and (pointer: coarse)",
@@ -425,23 +427,26 @@
         }
       }
 
-      function setTiltFromPointer(clientX, clientY) {
+      function setTiltFromScreenPoint(clientX, clientY, maxTiltDeg) {
         const normalizedX = clamp((clientX / window.innerWidth) * 2 - 1, -1, 1);
         const normalizedY = clamp(
           (clientY / window.innerHeight) * 2 - 1,
           -1,
           1,
         );
-        setTiltTarget(
-          normalizedY * MAX_TILT_DEG_DESKTOP,
-          -normalizedX * MAX_TILT_DEG_DESKTOP,
-        );
+        setTiltTarget(normalizedY * maxTiltDeg, -normalizedX * maxTiltDeg);
+      }
+
+      function setTiltFromPointer(clientX, clientY) {
+        setTiltFromScreenPoint(clientX, clientY, MAX_TILT_DEG_DESKTOP);
       }
 
       function handleDeviceOrientation(event) {
         if (typeof event.beta !== "number" || typeof event.gamma !== "number") {
           return;
         }
+
+        gyroTiltEnabled = true;
 
         const normalizedBeta = clamp(event.beta / 35, -1, 1);
         const normalizedGamma = clamp(event.gamma / 35, -1, 1);
@@ -451,27 +456,40 @@
         );
       }
 
-      async function enableGyroTilt() {
+      async function enableGyroTilt({ fromUserGesture = false } = {}) {
         if (
           !useGyroTilt ||
           typeof window.DeviceOrientationEvent === "undefined"
         ) {
-          return;
+          return false;
         }
 
         if (
           typeof window.DeviceOrientationEvent.requestPermission === "function"
         ) {
+          if (!fromUserGesture) {
+            return false;
+          }
+
           const permission =
             await window.DeviceOrientationEvent.requestPermission();
           if (permission !== "granted") {
-            return;
+            return false;
           }
         }
 
-        window.addEventListener("deviceorientation", handleDeviceOrientation, {
-          passive: true,
-        });
+        if (!gyroListenerAttached) {
+          window.addEventListener(
+            "deviceorientation",
+            handleDeviceOrientation,
+            {
+              passive: true,
+            },
+          );
+          gyroListenerAttached = true;
+        }
+
+        return true;
       }
 
       function fitWordmark() {
@@ -571,14 +589,41 @@
 
       if (useGyroTilt) {
         enableGyroTilt().catch(() => {});
-        const unlockGyroTilt = () => {
-          enableGyroTilt().catch(() => {});
+
+        window.addEventListener(
+          "touchmove",
+          (event) => {
+            if (gyroTiltEnabled) return;
+            const touch = event.touches && event.touches[0];
+            if (!touch) return;
+            setTiltFromScreenPoint(
+              touch.clientX,
+              touch.clientY,
+              MAX_TILT_DEG_MOBILE,
+            );
+          },
+          { passive: true },
+        );
+
+        window.addEventListener("touchend", () => {
+          if (!gyroTiltEnabled) setTiltTarget(0, 0);
+        });
+
+        const unlockGyroTilt = async () => {
+          const enabled = await enableGyroTilt({ fromUserGesture: true });
+          if (!enabled) return;
+          setTiltTarget(0, 0);
         };
-        window.addEventListener("touchstart", unlockGyroTilt, {
+
+        window.addEventListener("click", unlockGyroTilt, {
           passive: true,
           once: true,
         });
-        window.addEventListener("pointerdown", unlockGyroTilt, {
+        window.addEventListener("touchend", unlockGyroTilt, {
+          passive: true,
+          once: true,
+        });
+        window.addEventListener("pointerup", unlockGyroTilt, {
           passive: true,
           once: true,
         });
@@ -594,7 +639,10 @@
         window.addEventListener("blur", () => setTiltTarget(0, 0));
       }
 
-      document.body.addEventListener("click", (e) => {
+      document.body.addEventListener("click", async (e) => {
+        if (useGyroTilt && !gyroTiltEnabled) {
+          await enableGyroTilt({ fromUserGesture: true }).catch(() => {});
+        }
         createConfetti(e.clientX, e.clientY);
         update();
       });
