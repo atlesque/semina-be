@@ -287,6 +287,7 @@
 
       const FADE_MS = 150;
       const RESIZE_DEBOUNCE_MS = 100;
+      const PETAL_SPAWN_INTERVAL_MS = 85;
       const MAX_TEXT_WIDTH_RATIO = 0.8;
       const MAX_FONT_WIDTH_RATIO = 0.18;
       const MAX_FONT_HEIGHT_RATIO = 0.25;
@@ -303,6 +304,11 @@
       let tiltAnimationFrame = null;
       let gyroTiltEnabled = false;
       let gyroListenerAttached = false;
+      let activePointerId = null;
+      let isPetalSpawning = false;
+      let petalSpawnTimer = null;
+      let petalSpawnX = 0;
+      let petalSpawnY = 0;
 
       const useGyroTilt = window.matchMedia(
         "(hover: none) and (pointer: coarse)",
@@ -580,6 +586,36 @@
         document.body.style.backgroundColor = bg;
       }
 
+      function spawnPetalBurst() {
+        createConfetti(petalSpawnX, petalSpawnY);
+      }
+
+      function stopPetalSpawner() {
+        isPetalSpawning = false;
+        activePointerId = null;
+        if (petalSpawnTimer !== null) {
+          clearInterval(petalSpawnTimer);
+          petalSpawnTimer = null;
+        }
+      }
+
+      function startPetalSpawner(clientX, clientY, pointerId) {
+        petalSpawnX = clientX;
+        petalSpawnY = clientY;
+
+        update();
+
+        isPetalSpawning = true;
+        activePointerId = pointerId;
+        spawnPetalBurst();
+
+        if (petalSpawnTimer !== null) {
+          clearInterval(petalSpawnTimer);
+        }
+
+        petalSpawnTimer = setInterval(spawnPetalBurst, PETAL_SPAWN_INTERVAL_MS);
+      }
+
       let resizeTimer = null;
       window.addEventListener("resize", () => {
         cachedHintHeight = null;
@@ -639,13 +675,38 @@
         window.addEventListener("blur", () => setTiltTarget(0, 0));
       }
 
-      document.body.addEventListener("click", async (e) => {
+      window.addEventListener("pointerdown", async (event) => {
+        if (!event.isPrimary) return;
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+
         if (useGyroTilt && !gyroTiltEnabled) {
           await enableGyroTilt({ fromUserGesture: true }).catch(() => {});
         }
-        createConfetti(e.clientX, e.clientY);
-        update();
+
+        startPetalSpawner(event.clientX, event.clientY, event.pointerId);
       });
+
+      window.addEventListener(
+        "pointermove",
+        (event) => {
+          if (!isPetalSpawning || event.pointerId !== activePointerId) return;
+          petalSpawnX = event.clientX;
+          petalSpawnY = event.clientY;
+        },
+        { passive: true },
+      );
+
+      window.addEventListener("pointerup", (event) => {
+        if (event.pointerId !== activePointerId) return;
+        stopPetalSpawner();
+      });
+
+      window.addEventListener("pointercancel", (event) => {
+        if (event.pointerId !== activePointerId) return;
+        stopPetalSpawner();
+      });
+
+      window.addEventListener("blur", stopPetalSpawner);
       fitWordmark();
       window.addEventListener("load", fitWordmark);
     </script>
