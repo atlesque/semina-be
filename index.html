@@ -11,6 +11,10 @@
       href="https://fonts.googleapis.com/css2?family=Bangers&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded&display=block"
+      rel="stylesheet"
+    />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://semina.be/" />
     <meta property="og:title" content="Pini" />
@@ -68,61 +72,53 @@
         text-shadow: var(--outline-shadow);
         transform-style: preserve-3d;
         will-change: transform;
+        position: relative;
+        z-index: 1;
       }
 
       #bottom-word {
         color: inherit;
       }
 
-      #top-word.rainbow-active {
-        animation: rainbowGlowFadeOut 2.5s ease-out forwards;
+      #audio-glow {
+        position: fixed;
+        z-index: 0;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
       }
 
-      @keyframes rainbowGlowFadeOut {
-        0% {
-          text-shadow:
-            var(--outline-shadow),
-            0 0 2px rgba(255, 255, 255, 0.7),
-            0 0 10px #ff4d4d,
-            0 0 20px #ff884d;
+      #emoji-stream {
+        position: fixed;
+        z-index: 0;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .scrolling-emoji {
+        position: absolute;
+        top: var(--emoji-top);
+        left: 0;
+        display: block;
+        font-size: var(--emoji-size);
+        line-height: 1;
+        opacity: 0.8;
+        filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.25));
+        will-change: transform;
+        animation: emojiScroll var(--emoji-duration) linear forwards;
+      }
+
+      @keyframes emojiScroll {
+        from {
+          transform: translate3d(calc(-100% - 1rem), 0, 0)
+            rotate(var(--emoji-rotation-start));
         }
-        16% {
-          text-shadow:
-            var(--outline-shadow),
-            0 0 2px rgba(255, 255, 255, 0.7),
-            0 0 10px #ffcc4d,
-            0 0 20px #ffee4d;
-        }
-        33% {
-          text-shadow:
-            var(--outline-shadow),
-            0 0 2px rgba(255, 255, 255, 0.7),
-            0 0 10px #5cff7a,
-            0 0 20px #2cffcc;
-        }
-        50% {
-          text-shadow:
-            var(--outline-shadow),
-            0 0 2px rgba(255, 255, 255, 0.7),
-            0 0 10px #4dc3ff,
-            0 0 20px #4d7dff;
-        }
-        67% {
-          text-shadow:
-            var(--outline-shadow),
-            0 0 2px rgba(255, 255, 255, 0.7),
-            0 0 10px #c26bff,
-            0 0 20px #ff66d8;
-        }
-        83% {
-          text-shadow:
-            var(--outline-shadow),
-            0 0 2px rgba(255, 255, 255, 0.7),
-            0 0 10px #ff4d4d,
-            0 0 20px #ff884d;
-        }
-        100% {
-          text-shadow: var(--outline-shadow);
+        to {
+          transform: translate3d(calc(100vw + 1rem), 0, 0)
+            rotate(var(--emoji-rotation-end));
         }
       }
 
@@ -148,6 +144,7 @@
 
       #hint {
         position: fixed;
+        z-index: 1;
         bottom: calc(5.75rem + env(safe-area-inset-bottom));
         font-size: 1.1rem;
         font-family: Arial, sans-serif;
@@ -186,16 +183,48 @@
         place-items: center;
       }
 
-      #audio-track svg {
-        display: block;
-        width: 1.35rem;
-        height: 1.35rem;
-        fill: currentColor;
+      .material-symbols-rounded {
+        display: inline-block;
+        font-family: "Material Symbols Rounded";
+        font-size: 1.35rem;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-feature-settings: "liga";
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: "liga";
+        font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24;
       }
 
       #background-music {
         min-width: 0;
         width: 100%;
+      }
+
+      #loop-music {
+        flex: 0 0 auto;
+        display: grid;
+        width: 2.4rem;
+        height: 2.4rem;
+        border: 2px solid #000;
+        border-radius: 0.45rem;
+        padding: 0;
+        background: #fff;
+        color: #000;
+        place-items: center;
+        cursor: pointer;
+      }
+
+      #loop-music[aria-pressed="true"],
+      #loop-music:hover,
+      #loop-music:focus-visible {
+        background: #000;
+        color: #fff;
       }
 
       @media (max-width: 560px) {
@@ -214,6 +243,8 @@
     </style>
   </head>
   <body>
+    <canvas id="audio-glow" aria-hidden="true"></canvas>
+    <div id="emoji-stream" aria-hidden="true"></div>
     <h1 id="wordmark" aria-label="Clickini Pini">
       <span id="top-word">Clickini</span><br /><span id="bottom-word"
         >Pini</span
@@ -222,9 +253,7 @@
     <div id="hint" aria-label="Click anywhere to change"></div>
     <div id="audio-player" aria-label="Background music player">
       <span id="audio-track" role="img" aria-label="Background music">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M9 18V5.7l10-2.2v11.1a3.5 3.5 0 1 1-1.5-2.9V7.2L10.5 8.6V18A3.5 3.5 0 1 1 9 15.1V18Zm1.5-7.9v3.3a3.5 3.5 0 0 1 7-1.1V7.5l-7 1.5v1.1Z" />
-        </svg>
+        <span class="material-symbols-rounded" aria-hidden="true">music_note</span>
       </span>
       <audio
         id="background-music"
@@ -235,55 +264,71 @@
         controls
         aria-label="Pini background music"
       ></audio>
+      <button
+        id="loop-music"
+        type="button"
+        aria-label="Disable looping"
+        aria-pressed="true"
+        title="Disable looping"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">repeat</span>
+      </button>
     </div>
 
+    <script src="scripts/audio-visualizer.js"></script>
+    <script src="scripts/audio-player.js"></script>
+    <script src="scripts/emoji-stream.js"></script>
     <script>
       const basicWords = [
-        "Apple",
-        "Banana",
-        "Orange",
-        "Lemon",
-        "Cookie",
-        "Muffin",
-        "Pancake",
-        "Noodle",
-        "Pizza",
-        "Burger",
-        "Forest",
-        "Garden",
-        "Flower",
-        "Kitten",
-        "Dolphin",
-        "Penguin",
-        "Planet",
-        "Glitter",
-        "Melody",
-        "Piano",
-        "Pixel",
+        { word: "Apple", emoji: "🍎" },
+        { word: "Banana", emoji: "🍌" },
+        { word: "Orange", emoji: "🍊" },
+        { word: "Lemon", emoji: "🍋" },
+        { word: "Cookie", emoji: "🍪" },
+        { word: "Muffin", emoji: "🧁" },
+        { word: "Pancake", emoji: "🥞" },
+        { word: "Noodle", emoji: "🍜" },
+        { word: "Pizza", emoji: "🍕" },
+        { word: "Burger", emoji: "🍔" },
+        { word: "Forest", emoji: "🌲" },
+        { word: "Garden", emoji: "🌿" },
+        { word: "Flower", emoji: "🌸" },
+        { word: "Kitten", emoji: "🐱" },
+        { word: "Dolphin", emoji: "🐬" },
+        { word: "Penguin", emoji: "🐧" },
+        { word: "Planet", emoji: "🪐" },
+        { word: "Glitter", emoji: "✨" },
+        { word: "Melody", emoji: "🎵" },
+        { word: "Piano", emoji: "🎹" },
+        { word: "Pixel", emoji: "🟪" },
       ];
       const customWords = [
-        "Admin",
-        "Shauni",
-        "MBP",
-        "Analist",
-        "Macedonia",
-        "Fashion",
-        "Pini",
-        "Semina",
-        "Mini",
-        "Krul",
-        "Kroket",
-        "Optimi",
-        "Tauri",
-        "Santori",
-        "Wafel",
-        "Trouwring",
-        "Griss",
-        "Contactvoorkeur",
+        { word: "Admin", emoji: "🧑‍💼" },
+        { word: "Shauni", emoji: "🫶" },
+        { word: "MBP", emoji: "💻" },
+        { word: "Analist", emoji: "📊" },
+        { word: "Macedonia", emoji: "🇲🇰" },
+        { word: "Fashion", emoji: "👗" },
+        { word: "Pini", emoji: "🌲" },
+        { word: "Semina", emoji: "🌱" },
+        { word: "Mini", emoji: "🔹" },
+        { word: "Krul", emoji: "🌀" },
+        { word: "Kroket", emoji: "🥔" },
+        { word: "Optimi", emoji: "🚀" },
+        { word: "Tauri", emoji: "♉" },
+        { word: "Santori", emoji: "🕯️" },
+        { word: "Wafel", emoji: "🧇" },
+        { word: "Trouwring", emoji: "💍" },
+        { word: "Griss", emoji: "🪶" },
+        { word: "Contactvoorkeur", emoji: "📇" },
       ];
 
       // Merge + deduplicate, then shuffle and loop through all words
-      const allWords = [...new Set([...basicWords, ...customWords])];
+      const allWords = [
+        ...new Map(
+          [...basicWords, ...customWords].map((entry) => [entry.word, entry]),
+        ).values(),
+      ];
       let shuffledWords = [];
       let shuffledWordIndex = 0;
       let lastWord = null;
@@ -386,31 +431,23 @@
 
       const audioPlayerEl = document.getElementById("audio-player");
       const backgroundMusicEl = document.getElementById("background-music");
-
-      function startBackgroundMusic() {
-        const playback = backgroundMusicEl.play();
-        if (!playback || typeof playback.then !== "function") return;
-
-        playback
-          .then(() => {
-            window.removeEventListener("pointerdown", unlockBackgroundMusic);
-          })
-          .catch(() => {
-            // Browsers may require a user gesture before allowing audible autoplay.
-          });
-      }
-
-      function unlockBackgroundMusic() {
-        startBackgroundMusic();
-      }
-
-      audioPlayerEl.addEventListener("pointerdown", (event) => {
-        event.stopPropagation();
+      const loopMusicEl = document.getElementById("loop-music");
+      const emojiStream = window.PiniEmojiStream.createEmojiStream({
+        container: document.getElementById("emoji-stream"),
       });
-      window.addEventListener("load", startBackgroundMusic, { once: true });
-      window.addEventListener("pointerdown", unlockBackgroundMusic, {
-        once: true,
-        passive: true,
+
+      const audioVisualizer =
+        window.PiniAudioVisualizer.createAudioVisualizer({
+          audioElement: backgroundMusicEl,
+          targetElement: document.getElementById("top-word"),
+          canvasElement: document.getElementById("audio-glow"),
+        });
+
+      window.PiniAudioPlayer.createAudioPlayerController({
+        audioElement: backgroundMusicEl,
+        playerElement: audioPlayerEl,
+        loopButton: loopMusicEl,
+        visualizer: audioVisualizer,
       });
 
       const useGyroTilt = window.matchMedia(
@@ -435,7 +472,7 @@
       function refillShuffledWords() {
         shuffledWords = [...allWords];
         shuffleInPlace(shuffledWords);
-        if (shuffledWords.length > 1 && shuffledWords[0] === lastWord) {
+        if (shuffledWords.length > 1 && shuffledWords[0].word === lastWord) {
           [shuffledWords[0], shuffledWords[1]] = [
             shuffledWords[1],
             shuffledWords[0],
@@ -449,7 +486,7 @@
           refillShuffledWords();
         }
         const word = shuffledWords[shuffledWordIndex++];
-        lastWord = word;
+        lastWord = word.word;
         return word;
       }
 
@@ -661,11 +698,12 @@
       }
 
       function update() {
-        const word = getNextWord();
+        const wordEntry = getNextWord();
         const { value: bg, index: bgIdx } = pickRandom(bgColors, lastBgIndex);
         lastBgIndex = bgIdx;
 
-        const prefix = applyDisplayWord(word);
+        const prefix = applyDisplayWord(wordEntry.word);
+        emojiStream.setEmoji(wordEntry.emoji);
 
         const wordmarkEl = document.getElementById("wordmark");
         const topWordEl = document.getElementById("top-word");
@@ -675,11 +713,6 @@
           topWordEl.textContent = prefix;
           bottomWordEl.textContent = "Pini";
           wordmarkEl.setAttribute("aria-label", `${prefix} Pini`);
-
-          // Restart rainbow glow animation on the top word
-          topWordEl.classList.remove("rainbow-active");
-          void topWordEl.offsetWidth; // force reflow to restart animation
-          topWordEl.classList.add("rainbow-active");
 
           requestAnimationFrame(() => {
             fitWordmark();
