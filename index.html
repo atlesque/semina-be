@@ -148,13 +148,62 @@
 
       #hint {
         position: fixed;
-        bottom: 1.5rem;
+        bottom: calc(5.75rem + env(safe-area-inset-bottom));
         font-size: 1.1rem;
         font-family: Arial, sans-serif;
         opacity: 0.55;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         pointer-events: none;
+      }
+
+      #audio-player {
+        position: fixed;
+        z-index: 2000;
+        right: 1rem;
+        bottom: max(1rem, env(safe-area-inset-bottom));
+        left: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: min(620px, calc(100vw - 2rem));
+        margin: 0 auto;
+        padding: 0.7rem 0.85rem;
+        border: 2px solid rgba(0, 0, 0, 0.75);
+        border-radius: 0.75rem;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+        color: #000;
+        cursor: default;
+        user-select: none;
+      }
+
+      #audio-track {
+        flex: 0 0 auto;
+        display: grid;
+        width: 1.5rem;
+        height: 1.5rem;
+        place-items: center;
+      }
+
+      #audio-track svg {
+        display: block;
+        width: 1.35rem;
+        height: 1.35rem;
+        fill: currentColor;
+      }
+
+      #background-music {
+        min-width: 0;
+        width: 100%;
+      }
+
+      @media (max-width: 560px) {
+        #audio-player {
+          gap: 0.5rem;
+          padding: 0.55rem;
+        }
+
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -171,6 +220,22 @@
       >
     </h1>
     <div id="hint" aria-label="Click anywhere to change"></div>
+    <div id="audio-player" aria-label="Background music player">
+      <span id="audio-track" role="img" aria-label="Background music">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M9 18V5.7l10-2.2v11.1a3.5 3.5 0 1 1-1.5-2.9V7.2L10.5 8.6V18A3.5 3.5 0 1 1 9 15.1V18Zm1.5-7.9v3.3a3.5 3.5 0 0 1 7-1.1V7.5l-7 1.5v1.1Z" />
+        </svg>
+      </span>
+      <audio
+        id="background-music"
+        src="audio/pini-background.mp3"
+        autoplay
+        loop
+        preload="auto"
+        controls
+        aria-label="Pini background music"
+      ></audio>
+    </div>
 
     <script>
       const basicWords = [
@@ -318,6 +383,35 @@
       let petalSpawnTimer = null;
       let petalSpawnX = 0;
       let petalSpawnY = 0;
+
+      const audioPlayerEl = document.getElementById("audio-player");
+      const backgroundMusicEl = document.getElementById("background-music");
+
+      function startBackgroundMusic() {
+        const playback = backgroundMusicEl.play();
+        if (!playback || typeof playback.then !== "function") return;
+
+        playback
+          .then(() => {
+            window.removeEventListener("pointerdown", unlockBackgroundMusic);
+          })
+          .catch(() => {
+            // Browsers may require a user gesture before allowing audible autoplay.
+          });
+      }
+
+      function unlockBackgroundMusic() {
+        startBackgroundMusic();
+      }
+
+      audioPlayerEl.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+      });
+      window.addEventListener("load", startBackgroundMusic, { once: true });
+      window.addEventListener("pointerdown", unlockBackgroundMusic, {
+        once: true,
+        passive: true,
+      });
 
       const useGyroTilt = window.matchMedia(
         "(hover: none) and (pointer: coarse)",
