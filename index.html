@@ -36,12 +36,16 @@
 
       body {
         --wordmark-max-width: 1280px;
+        --emoji-zone-bottom: 7.5rem;
         --outline-shadow:
           -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, -2px 0 0 #000,
           2px 0 0 #000, -2px 2px 0 #000, 0 2px 0 #000, 2px 2px 0 #000,
           -3px 3px 0 rgba(0, 0, 0, 0.85), -5px 5px 0 rgba(0, 0, 0, 0.7),
           -7px 7px 0 rgba(0, 0, 0, 0.55), -9px 9px 0 rgba(0, 0, 0, 0.4),
           -11px 11px 0 rgba(0, 0, 0, 0.25), -13px 13px 0 rgba(0, 0, 0, 0.12);
+        --outline-only-shadow:
+          -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, -2px 0 0 #000,
+          2px 0 0 #000, -2px 2px 0 #000, 0 2px 0 #000, 2px 2px 0 #000;
         min-height: 100vh;
         display: flex;
         justify-content: center;
@@ -64,21 +68,40 @@
         line-height: 1;
         text-align: center;
         white-space: nowrap;
-        transition:
-          opacity 0.15s ease,
-          transform 0.12s ease-out;
         width: 80vw;
         max-width: var(--wordmark-max-width);
         text-shadow: var(--outline-shadow);
         transform-style: preserve-3d;
         will-change: transform;
-        position: relative;
+        position: fixed;
+        top: 50%;
+        left: 50%;
         z-index: 1;
+        pointer-events: auto;
+        transition:
+          opacity 0.15s ease,
+          top 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+          font-size 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translate(-50%, -50%) rotateX(var(--tilt-x, 0deg))
+          rotateY(var(--tilt-y, 0deg));
+      }
+
+      body.game-started #wordmark {
+        top: calc(100% - var(--emoji-zone-bottom) - 1.1rem);
+        width: min(72vw, 720px);
         pointer-events: none;
+        transform: translate(-50%, -100%) rotateX(var(--tilt-x, 0deg))
+          rotateY(var(--tilt-y, 0deg));
       }
 
       #bottom-word {
         color: inherit;
+      }
+
+      body.game-started #wordmark-break,
+      body.game-started #bottom-word {
+        display: none;
       }
 
       #audio-glow {
@@ -94,26 +117,30 @@
       #emoji-stream {
         position: fixed;
         z-index: 0;
-        inset: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
         overflow: hidden;
         pointer-events: none;
       }
 
       .scrolling-emoji {
         position: absolute;
-        top: var(--emoji-top);
-        left: 0;
+        top: calc(var(--emoji-size) * -1);
+        left: var(--emoji-left);
         display: block;
         font-size: var(--emoji-size);
         line-height: 1;
-        opacity: 0.8;
+        opacity: 0;
         filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.25));
         will-change: transform;
-        animation: emojiScroll var(--emoji-duration) linear forwards;
+        animation: emojiRain var(--emoji-duration) linear forwards;
         cursor: pointer;
         pointer-events: auto;
         touch-action: manipulation;
         transition: opacity 100ms ease-out;
+        z-index: 2;
       }
 
       .emoji-fade-out {
@@ -126,13 +153,21 @@
         filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.35));
       }
 
-      @keyframes emojiScroll {
+      @keyframes emojiRain {
         from {
-          transform: translate3d(calc(-100% - 1rem), 0, 0)
+          transform: translate3d(-50%, 0, 0)
             rotate(var(--emoji-rotation-start));
+          opacity: 0;
         }
-        to {
-          transform: translate3d(calc(100vw + 1rem), 0, 0)
+        10% {
+          opacity: 0.82;
+        }
+        78% {
+          opacity: 0.82;
+        }
+        100% {
+          opacity: 0;
+          transform: translate3d(-50%, var(--emoji-travel), 0)
             rotate(var(--emoji-rotation-end));
         }
       }
@@ -157,16 +192,122 @@
         }
       }
 
-      #hint {
+      #high-score {
         position: fixed;
-        z-index: 1;
-        bottom: calc(5.75rem + env(safe-area-inset-bottom));
-        font-size: 1.1rem;
-        font-family: Arial, sans-serif;
-        opacity: 0.55;
-        letter-spacing: 0.08em;
+        z-index: 3;
+        top: max(1rem, env(safe-area-inset-top));
+        left: max(1rem, env(safe-area-inset-left));
+        color: #fff;
+        font: 1.5rem/1 "Bangers", "Arial Black", "Impact", sans-serif;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
+        text-shadow: var(--outline-only-shadow);
+        white-space: nowrap;
         pointer-events: none;
+      }
+
+      #score-value {
+        display: block;
+        color: inherit;
+        font: inherit;
+      }
+
+      #menu-button {
+        position: fixed;
+        z-index: 3;
+        top: max(1rem, env(safe-area-inset-top));
+        right: max(1rem, env(safe-area-inset-right));
+        display: grid;
+        width: 2.4rem;
+        height: 2.4rem;
+        border: 0;
+        background: transparent;
+        color: #fff;
+        place-items: center;
+        text-shadow: var(--outline-only-shadow);
+        cursor: pointer;
+      }
+
+      #menu-button:hover,
+      #menu-button:focus-visible {
+        transform: scale(1.08);
+      }
+
+      #menu-button .material-symbols-rounded {
+        font-size: 1.8rem;
+      }
+
+      #game-menu {
+        width: min(320px, calc(100vw - 2rem));
+        max-width: calc(100vw - 2rem);
+        margin: auto;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: #000;
+      }
+
+      #game-menu::backdrop {
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(3px);
+      }
+
+      #menu-card {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1.25rem;
+        border: 3px solid #000;
+        border-radius: 0.8rem;
+        padding: 1rem 1.25rem 1.25rem;
+        background: #fff;
+        box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.4);
+      }
+
+      #close-menu {
+        position: static;
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        align-self: center;
+        display: grid;
+        width: 2rem;
+        height: 2rem;
+        border: 0;
+        border-radius: 0.35rem;
+        background: #e6e6e6;
+        color: #000;
+        place-items: center;
+        cursor: pointer;
+      }
+
+      #close-menu:hover,
+      #close-menu:focus-visible {
+        background: #d0d0d0;
+      }
+
+      #reset-game {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        border: 2px solid #000;
+        border-radius: 0.45rem;
+        padding: 0.7rem 1rem;
+        background: #000;
+        color: #fff;
+        font: 1.25rem/1 "Bangers", "Arial Black", "Impact", sans-serif;
+        letter-spacing: 0.05em;
+        text-shadow: var(--outline-only-shadow);
+        cursor: pointer;
+        transition:
+          background-color 0.15s ease,
+          color 0.15s ease;
+      }
+
+      #reset-game:hover,
+      #reset-game:focus,
+      #reset-game:focus-visible {
+        background: #fff;
+        color: #fff;
       }
 
       #audio-player {
@@ -175,9 +316,11 @@
         right: 1rem;
         bottom: max(1rem, env(safe-area-inset-bottom));
         left: 1rem;
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 2.4rem;
+        grid-template-rows: auto;
         align-items: center;
-        gap: 0.75rem;
+        column-gap: 0.75rem;
         width: min(620px, calc(100vw - 2rem));
         margin: 0 auto;
         padding: 0.7rem 0.85rem;
@@ -192,23 +335,7 @@
 
       #audio-main {
         min-width: 0;
-        flex: 1 1 auto;
-      }
-
-      #audio-track-name {
-        overflow: hidden;
-        margin-top: 0.15rem;
-        font: 0.72rem/1.1 Arial, sans-serif;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      #audio-track {
-        flex: 0 0 auto;
-        display: grid;
-        width: 1.5rem;
-        height: 1.5rem;
-        place-items: center;
+        display: contents;
       }
 
       .material-symbols-rounded {
@@ -230,12 +357,15 @@
       }
 
       #background-music {
+        grid-column: 1;
+        grid-row: 1;
         min-width: 0;
         width: 100%;
       }
 
       #playlist-settings {
-        flex: 0 0 auto;
+        grid-column: 2;
+        grid-row: 1;
         position: relative;
       }
 
@@ -300,8 +430,13 @@
 
       @media (max-width: 560px) {
         #audio-player {
-          gap: 0.5rem;
+          column-gap: 0.5rem;
           padding: 0.55rem;
+        }
+
+        body.game-started #wordmark {
+          width: min(76vw, 440px);
+          top: calc(100% - var(--emoji-zone-bottom) - 0.8rem);
         }
 
       }
@@ -310,22 +445,40 @@
         #wordmark {
           transition: opacity 0.15s ease;
         }
+
+        .scrolling-emoji {
+          animation-duration: 0.01ms;
+        }
       }
     </style>
   </head>
   <body>
     <canvas id="audio-glow" aria-hidden="true"></canvas>
     <div id="emoji-stream" aria-hidden="true"></div>
+    <div
+      id="high-score"
+      role="status"
+      aria-live="polite"
+      aria-label="High score 0"
+    >
+      <span id="score-value">0</span>
+    </div>
+    <button
+      id="menu-button"
+      type="button"
+      aria-label="Open menu"
+      aria-controls="game-menu"
+      aria-expanded="false"
+      title="Open menu"
+    >
+      <span class="material-symbols-rounded" aria-hidden="true">menu</span>
+    </button>
     <h1 id="wordmark" aria-label="Clickini Pini">
-      <span id="top-word">Clickini</span><br /><span id="bottom-word"
-        >Pini</span
-      >
+      <span id="top-word">Clickini</span>
+      <br id="wordmark-break" />
+      <span id="bottom-word">Pini</span>
     </h1>
-    <div id="hint" aria-label="Click anywhere to change"></div>
     <div id="audio-player" aria-label="Background music player">
-      <span id="audio-track" role="img" aria-label="Background music">
-        <span class="material-symbols-rounded" aria-hidden="true">music_note</span>
-      </span>
       <div id="audio-main">
         <audio
           id="background-music"
@@ -335,7 +488,19 @@
           controls
           aria-label="Pini background music"
         ></audio>
-        <div id="audio-track-name" aria-live="polite">Get Well Soon</div>
+        <script>
+          (() => {
+            const localHosts = new Set([
+              "localhost",
+              "127.0.0.1",
+              "::1",
+              "[::1]",
+            ]);
+            if (localHosts.has(window.location.hostname)) {
+              document.getElementById("background-music").muted = true;
+            }
+          })();
+        </script>
       </div>
       <details id="playlist-settings">
         <summary aria-label="Open playlist" title="Open playlist">
@@ -344,10 +509,18 @@
         <div id="playlist-menu" role="listbox" aria-label="Playlist"></div>
       </details>
     </div>
+    <dialog id="game-menu" aria-label="Game menu">
+      <div id="menu-card">
+        <button id="close-menu" type="button" aria-label="Close menu">
+          <span class="material-symbols-rounded" aria-hidden="true">close</span>
+        </button>
+        <button id="reset-game" type="button">Reset game</button>
+      </div>
+    </dialog>
 
     <script src="scripts/audio-visualizer.js"></script>
-    <script src="scripts/audio-player.js"></script>
-    <script src="scripts/emoji-stream.js"></script>
+    <script src="scripts/audio-player.js?v=compact-1"></script>
+    <script src="scripts/emoji-stream.js?v=rain-1"></script>
     <script>
       const basicWords = [
         { word: "Apple", emoji: "🍎" },
@@ -482,11 +655,9 @@
       const MAX_FONT_WIDTH_RATIO = 0.18;
       const MAX_FONT_HEIGHT_RATIO = 0.25;
       const MIN_FONT_SIZE_PX = 28;
-      const HINT_CLEARANCE_PX = 24;
       const MAX_TILT_DEG_DESKTOP = 15;
       const MAX_TILT_DEG_MOBILE = 20;
       const TILT_EASING = 0.14;
-      let cachedHintHeight = null;
       let currentTiltX = 0;
       let currentTiltY = 0;
       let targetTiltX = 0;
@@ -499,12 +670,96 @@
       let petalSpawnTimer = null;
       let petalSpawnX = 0;
       let petalSpawnY = 0;
+      let score = 0;
+      let hasStarted = false;
+      let currentWordEmoji = "✨";
+      let wordUpdateTimer = null;
 
       const audioPlayerEl = document.getElementById("audio-player");
       const backgroundMusicEl = document.getElementById("background-music");
+      const wordmarkEl = document.getElementById("wordmark");
+      const highScoreEl = document.getElementById("high-score");
+      const scoreValueEl = document.getElementById("score-value");
+      const menuButtonEl = document.getElementById("menu-button");
+      const gameMenuEl = document.getElementById("game-menu");
+      const closeMenuEl = document.getElementById("close-menu");
+      const resetGameEl = document.getElementById("reset-game");
+
+      function syncPlayfieldMetrics() {
+        const audioBounds = audioPlayerEl.getBoundingClientRect();
+        const gap = Math.max(16, Math.round(window.innerHeight * 0.022));
+        const emojiZoneBottom = Math.max(
+          96,
+          Math.ceil(window.innerHeight - audioBounds.top + gap),
+        );
+        document.body.style.setProperty(
+          "--emoji-zone-bottom",
+          `${emojiZoneBottom}px`,
+        );
+      }
+
+      function startGame() {
+        if (hasStarted) return;
+        hasStarted = true;
+        document.body.classList.add("game-started");
+        wordmarkEl.setAttribute(
+          "aria-label",
+          document.getElementById("top-word").textContent,
+        );
+        fitWordmark();
+      }
+
       const emojiStream = window.PiniEmojiStream.createEmojiStream({
         container: document.getElementById("emoji-stream"),
         onEmojiClick: handleEmojiClick,
+      });
+
+      function resetGame() {
+        if (wordUpdateTimer !== null) {
+          window.clearTimeout(wordUpdateTimer);
+          wordUpdateTimer = null;
+        }
+
+        stopPetalSpawner();
+        score = 0;
+        scoreValueEl.textContent = "0";
+        highScoreEl.setAttribute("aria-label", "High score 0");
+        hasStarted = false;
+        currentWordEmoji = "✨";
+        lastWord = null;
+        shuffledWords = [];
+        shuffledWordIndex = 0;
+        lastBgIndex = -1;
+        document.body.classList.remove("game-started");
+        document.body.style.backgroundColor = bgColors[0];
+        wordmarkEl.style.opacity = "1";
+        wordmarkEl.style.fontSize = "";
+        document.getElementById("top-word").textContent = "Clickini";
+        document.getElementById("bottom-word").textContent = "Pini";
+        wordmarkEl.setAttribute("aria-label", "Clickini Pini");
+        emojiStream.reset?.();
+        updateGetWellSoonEmojis();
+        syncPlayfieldMetrics();
+        fitWordmark();
+        gameMenuEl.close();
+      }
+
+      function openMenu() {
+        if (gameMenuEl.open) return;
+        gameMenuEl.showModal();
+        menuButtonEl.setAttribute("aria-expanded", "true");
+        closeMenuEl.focus();
+      }
+
+      menuButtonEl.addEventListener("click", openMenu);
+      closeMenuEl.addEventListener("click", () => gameMenuEl.close());
+      resetGameEl.addEventListener("click", resetGame);
+      gameMenuEl.addEventListener("click", (event) => {
+        if (event.target === gameMenuEl) gameMenuEl.close();
+      });
+      gameMenuEl.addEventListener("close", () => {
+        menuButtonEl.setAttribute("aria-expanded", "false");
+        menuButtonEl.focus();
       });
 
       const audioVisualizer =
@@ -526,18 +781,17 @@
           { title: "Pini Macedonini", src: "audio/pini-background.mp3" },
         ],
         playlistElement: document.getElementById("playlist-menu"),
-        trackNameElement: document.getElementById("audio-track-name"),
       });
 
       const getWellSoonAudioSrc =
         "audio/20260916-142727-77c9dd-web-small.mp3";
-      emojiStream.setSpecialEmojis(["❤️‍🩹", "🩹"]);
+      emojiStream.setSpecialEmojis?.(["❤️‍🩹", "🩹"]);
 
       function updateGetWellSoonEmojis() {
         const isGetWellSoonPlaying =
           !backgroundMusicEl.paused &&
           backgroundMusicEl.currentSrc.endsWith(getWellSoonAudioSrc);
-        emojiStream.setSpecialEmojiActive(isGetWellSoonPlaying);
+        emojiStream.setSpecialEmojiActive?.(isGetWellSoonPlaying);
       }
 
       backgroundMusicEl.addEventListener("play", updateGetWellSoonEmojis);
@@ -622,20 +876,19 @@
         }
       }
 
-      function getHintHeight() {
-        if (cachedHintHeight !== null) return cachedHintHeight;
-        const hintEl = document.getElementById("hint");
-        cachedHintHeight = hintEl ? hintEl.getBoundingClientRect().height : 0;
-        return cachedHintHeight;
-      }
-
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
       }
 
       function applyWordmarkTilt() {
-        const wordmarkEl = document.getElementById("wordmark");
-        wordmarkEl.style.transform = `rotateX(${currentTiltX.toFixed(2)}deg) rotateY(${currentTiltY.toFixed(2)}deg)`;
+        wordmarkEl.style.setProperty(
+          "--tilt-x",
+          `${currentTiltX.toFixed(2)}deg`,
+        );
+        wordmarkEl.style.setProperty(
+          "--tilt-y",
+          `${currentTiltY.toFixed(2)}deg`,
+        );
       }
 
       function animateTilt() {
@@ -732,9 +985,9 @@
       }
 
       function fitWordmark() {
-        const wordmarkEl = document.getElementById("wordmark");
         const topWordEl = document.getElementById("top-word");
         const bottomWordEl = document.getElementById("bottom-word");
+        const isGameStarted = document.body.classList.contains("game-started");
         const maxWidthPx = parseFloat(
           getComputedStyle(document.body).getPropertyValue(
             "--wordmark-max-width",
@@ -744,29 +997,33 @@
           ? maxWidthPx
           : window.innerWidth;
         const maxWidth = Math.min(
-          window.innerWidth * MAX_TEXT_WIDTH_RATIO,
+          window.innerWidth *
+            (isGameStarted ? MAX_TEXT_WIDTH_RATIO * 0.9 : MAX_TEXT_WIDTH_RATIO),
           safeMaxWidthPx,
         );
-        const hintHeight = getHintHeight();
         const bodyStyles = getComputedStyle(document.body);
         const bodyPaddingTop = parseFloat(bodyStyles.paddingTop) || 0;
         const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
         const availableHeight =
           window.innerHeight -
           bodyPaddingTop -
-          bodyPaddingBottom -
-          hintHeight -
-          HINT_CLEARANCE_PX;
+          bodyPaddingBottom;
         const maxHeight = Math.max(MIN_FONT_SIZE_PX * 2, availableHeight);
         const maxSize = Math.floor(
           Math.min(
-            window.innerWidth * MAX_FONT_WIDTH_RATIO,
-            window.innerHeight * MAX_FONT_HEIGHT_RATIO,
+            window.innerWidth *
+              (isGameStarted
+                ? MAX_FONT_WIDTH_RATIO * 0.56
+                : MAX_FONT_WIDTH_RATIO),
+            window.innerHeight *
+              (isGameStarted
+                ? MAX_FONT_HEIGHT_RATIO * 0.56
+                : MAX_FONT_HEIGHT_RATIO),
           ),
         );
-        let low = MIN_FONT_SIZE_PX;
+        let low = isGameStarted ? 22 : MIN_FONT_SIZE_PX;
         let high = Math.max(MIN_FONT_SIZE_PX, maxSize);
-        let best = MIN_FONT_SIZE_PX;
+        let best = low;
 
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
@@ -774,8 +1031,12 @@
           const hasNoWrapping =
             topWordEl.getClientRects().length <= 1 &&
             bottomWordEl.getClientRects().length <= 1;
+          const contentWidth = Math.max(
+            topWordEl.getBoundingClientRect().width,
+            bottomWordEl.getBoundingClientRect().width,
+          );
           const fits =
-            wordmarkEl.scrollWidth <= maxWidth &&
+            contentWidth <= maxWidth &&
             wordmarkEl.scrollHeight <= maxHeight &&
             hasNoWrapping;
 
@@ -796,16 +1057,26 @@
         lastBgIndex = bgIdx;
 
         const prefix = applyDisplayWord(wordEntry.word);
-        emojiStream.setEmoji(wordEntry.emoji);
+        currentWordEmoji = wordEntry.emoji;
+        emojiStream.setEmoji(currentWordEmoji);
 
         const wordmarkEl = document.getElementById("wordmark");
         const topWordEl = document.getElementById("top-word");
         const bottomWordEl = document.getElementById("bottom-word");
         wordmarkEl.style.opacity = "0";
-        setTimeout(() => {
+        if (wordUpdateTimer !== null) {
+          window.clearTimeout(wordUpdateTimer);
+        }
+        wordUpdateTimer = window.setTimeout(() => {
+          wordUpdateTimer = null;
           topWordEl.textContent = prefix;
           bottomWordEl.textContent = "Pini";
-          wordmarkEl.setAttribute("aria-label", `${prefix} Pini`);
+          wordmarkEl.setAttribute(
+            "aria-label",
+            document.body.classList.contains("game-started")
+              ? prefix
+              : `${prefix} Pini`,
+          );
 
           requestAnimationFrame(() => {
             fitWordmark();
@@ -832,8 +1103,6 @@
         petalSpawnX = clientX;
         petalSpawnY = clientY;
 
-        update();
-
         isPetalSpawning = true;
         activePointerId = pointerId;
         spawnPetalBurst();
@@ -845,13 +1114,26 @@
         petalSpawnTimer = setInterval(spawnPetalBurst, PETAL_SPAWN_INTERVAL_MS);
       }
 
-      function handleEmojiClick(event) {
+      function handleEmojiClick(event, clickedEmoji) {
+        startGame();
+        score += 1;
+        scoreValueEl.textContent = score;
+        highScoreEl.setAttribute("aria-label", `High score ${score}`);
+        if (clickedEmoji === currentWordEmoji) {
+          update();
+        }
         startPetalSpawner(event.clientX, event.clientY, event.pointerId);
+      }
+
+      function handleWordmarkClick() {
+        if (hasStarted) return;
+        startGame();
+        update();
       }
 
       let resizeTimer = null;
       window.addEventListener("resize", () => {
-        cachedHintHeight = null;
+        syncPlayfieldMetrics();
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(fitWordmark, RESIZE_DEBOUNCE_MS);
       });
@@ -929,6 +1211,8 @@
       });
 
       window.addEventListener("blur", stopPetalSpawner);
+      wordmarkEl.addEventListener("pointerdown", handleWordmarkClick);
+      syncPlayfieldMetrics();
       fitWordmark();
       window.addEventListener("load", fitWordmark);
     </script>

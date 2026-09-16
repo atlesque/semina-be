@@ -4,9 +4,14 @@ function createAudioPlayerController({
   visualizer,
   tracks,
   playlistElement,
-  trackNameElement,
 }) {
   let currentTrackIndex = 0;
+  const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+  const startsMuted = localHosts.has(window.location.hostname);
+
+  if (startsMuted) {
+    audioElement.muted = true;
+  }
 
   function startBackgroundMusic() {
     const playback = audioElement.play();
@@ -35,7 +40,6 @@ function createAudioPlayerController({
         );
       },
     );
-    trackNameElement.textContent = tracks[currentTrackIndex].title;
   }
 
   function loadTrack(index, { autoplay = true } = {}) {
