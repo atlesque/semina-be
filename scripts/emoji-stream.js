@@ -1,4 +1,4 @@
-function createEmojiStream({ container }) {
+function createEmojiStream({ container, onEmojiClick }) {
   const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const SPAWN_INTERVAL_MS = 520;
   let activeEmoji = "✨";
@@ -30,10 +30,22 @@ function createEmojiStream({ container }) {
       `${(Math.random() - 0.5) * 18}deg`,
     );
     container.appendChild(emoji);
+    emoji.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary) return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      if (emoji.dataset.removing === "true") return;
+
+      emoji.dataset.removing = "true";
+      emoji.classList.add("emoji-fade-out");
+      onEmojiClick?.(event);
+      window.setTimeout(() => emoji.remove(), EMOJI_FADE_OUT_MS);
+    });
     emoji.addEventListener("animationend", () => emoji.remove(), {
       once: true,
     });
   }
+
+  const EMOJI_FADE_OUT_MS = 100;
 
   function setEmoji(emoji) {
     activeEmoji = emoji || "✨";

@@ -74,6 +74,7 @@
         will-change: transform;
         position: relative;
         z-index: 1;
+        pointer-events: none;
       }
 
       #bottom-word {
@@ -109,6 +110,15 @@
         filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.25));
         will-change: transform;
         animation: emojiScroll var(--emoji-duration) linear forwards;
+        cursor: pointer;
+        pointer-events: auto;
+        touch-action: manipulation;
+        transition: opacity 100ms ease-out;
+      }
+
+      .emoji-fade-out {
+        opacity: 0;
+        pointer-events: none;
       }
 
       .special-scrolling-emoji {
@@ -494,6 +504,7 @@
       const backgroundMusicEl = document.getElementById("background-music");
       const emojiStream = window.PiniEmojiStream.createEmojiStream({
         container: document.getElementById("emoji-stream"),
+        onEmojiClick: handleEmojiClick,
       });
 
       const audioVisualizer =
@@ -834,6 +845,10 @@
         petalSpawnTimer = setInterval(spawnPetalBurst, PETAL_SPAWN_INTERVAL_MS);
       }
 
+      function handleEmojiClick(event) {
+        startPetalSpawner(event.clientX, event.clientY, event.pointerId);
+      }
+
       let resizeTimer = null;
       window.addEventListener("resize", () => {
         cachedHintHeight = null;
@@ -892,17 +907,6 @@
         window.addEventListener("mouseleave", () => setTiltTarget(0, 0));
         window.addEventListener("blur", () => setTiltTarget(0, 0));
       }
-
-      window.addEventListener("pointerdown", async (event) => {
-        if (!event.isPrimary) return;
-        if (event.pointerType === "mouse" && event.button !== 0) return;
-
-        if (useGyroTilt && !gyroTiltEnabled) {
-          await enableGyroTilt({ fromUserGesture: true }).catch(() => {});
-        }
-
-        startPetalSpawner(event.clientX, event.clientY, event.pointerId);
-      });
 
       window.addEventListener(
         "pointermove",
