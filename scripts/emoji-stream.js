@@ -3,13 +3,15 @@ function createEmojiStream({ container }) {
   const SPAWN_INTERVAL_MS = 520;
   let activeEmoji = "✨";
   let spawnTimer = null;
+  let specialEmojiTimer = null;
+  let specialEmojis = [];
 
-  function spawnEmoji() {
+  function spawnEmoji(emojiOverride = activeEmoji, className = "") {
     if (reducedMotionQuery.matches) return;
 
     const emoji = document.createElement("span");
-    emoji.className = "scrolling-emoji";
-    emoji.textContent = activeEmoji;
+    emoji.className = `scrolling-emoji ${className}`.trim();
+    emoji.textContent = emojiOverride;
     emoji.style.setProperty("--emoji-top", `${8 + Math.random() * 84}%`);
     emoji.style.setProperty(
       "--emoji-size",
@@ -42,9 +44,33 @@ function createEmojiStream({ container }) {
     }
   }
 
+  function spawnSpecialEmoji() {
+    if (!specialEmojis.length) return;
+    const emoji = specialEmojis[Math.floor(Math.random() * specialEmojis.length)];
+    spawnEmoji(emoji, "special-scrolling-emoji");
+  }
+
+  function setSpecialEmojiActive(isActive) {
+    if (!isActive || !specialEmojis.length) {
+      if (specialEmojiTimer !== null) {
+        window.clearInterval(specialEmojiTimer);
+        specialEmojiTimer = null;
+      }
+      return;
+    }
+
+    if (specialEmojiTimer !== null) return;
+    spawnSpecialEmoji();
+    specialEmojiTimer = window.setInterval(spawnSpecialEmoji, 620);
+  }
+
+  function setSpecialEmojis(emojis) {
+    specialEmojis = Array.isArray(emojis) ? emojis.filter(Boolean) : [];
+  }
+
   setEmoji(activeEmoji);
 
-  return { setEmoji };
+  return { setEmoji, setSpecialEmojis, setSpecialEmojiActive };
 }
 
 window.PiniEmojiStream = { createEmojiStream };

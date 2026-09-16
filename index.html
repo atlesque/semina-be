@@ -111,6 +111,11 @@
         animation: emojiScroll var(--emoji-duration) linear forwards;
       }
 
+      .special-scrolling-emoji {
+        z-index: 1;
+        filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.35));
+      }
+
       @keyframes emojiScroll {
         from {
           transform: translate3d(calc(-100% - 1rem), 0, 0)
@@ -175,6 +180,19 @@
         user-select: none;
       }
 
+      #audio-main {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      #audio-track-name {
+        overflow: hidden;
+        margin-top: 0.15rem;
+        font: 0.72rem/1.1 Arial, sans-serif;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       #audio-track {
         flex: 0 0 auto;
         display: grid;
@@ -206,23 +224,66 @@
         width: 100%;
       }
 
-      #loop-music {
+      #playlist-settings {
         flex: 0 0 auto;
+        position: relative;
+      }
+
+      #playlist-settings summary {
         display: grid;
         width: 2.4rem;
         height: 2.4rem;
         border: 2px solid #000;
         border-radius: 0.45rem;
-        padding: 0;
         background: #fff;
         color: #000;
         place-items: center;
         cursor: pointer;
+        list-style: none;
       }
 
-      #loop-music[aria-pressed="true"],
-      #loop-music:hover,
-      #loop-music:focus-visible {
+      #playlist-settings summary::-webkit-details-marker {
+        display: none;
+      }
+
+      #playlist-settings summary:hover,
+      #playlist-settings summary:focus-visible,
+      #playlist-settings[open] summary {
+        background: #000;
+        color: #fff;
+      }
+
+      #playlist-menu {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 0.55rem);
+        display: grid;
+        gap: 0.3rem;
+        width: min(250px, calc(100vw - 2rem));
+        padding: 0.45rem;
+        border: 2px solid #000;
+        border-radius: 0.55rem;
+        background: #fff;
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+      }
+
+      #playlist-menu button {
+        overflow: hidden;
+        border: 0;
+        border-radius: 0.3rem;
+        padding: 0.5rem 0.6rem;
+        background: #fff;
+        color: #000;
+        font: 0.8rem Arial, sans-serif;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      #playlist-menu button:hover,
+      #playlist-menu button:focus-visible,
+      #playlist-menu button[aria-current="true"] {
         background: #000;
         color: #fff;
       }
@@ -255,24 +316,23 @@
       <span id="audio-track" role="img" aria-label="Background music">
         <span class="material-symbols-rounded" aria-hidden="true">music_note</span>
       </span>
-      <audio
-        id="background-music"
-        src="audio/pini-background.mp3"
-        autoplay
-        loop
-        preload="auto"
-        controls
-        aria-label="Pini background music"
-      ></audio>
-      <button
-        id="loop-music"
-        type="button"
-        aria-label="Disable looping"
-        aria-pressed="true"
-        title="Disable looping"
-      >
-        <span class="material-symbols-rounded" aria-hidden="true">repeat</span>
-      </button>
+      <div id="audio-main">
+        <audio
+          id="background-music"
+          src="audio/20260916-142727-77c9dd-web-small.mp3"
+          autoplay
+          preload="auto"
+          controls
+          aria-label="Pini background music"
+        ></audio>
+        <div id="audio-track-name" aria-live="polite">Get Well Soon</div>
+      </div>
+      <details id="playlist-settings">
+        <summary aria-label="Open playlist" title="Open playlist">
+          <span class="material-symbols-rounded" aria-hidden="true">queue_music</span>
+        </summary>
+        <div id="playlist-menu" role="listbox" aria-label="Playlist"></div>
+      </details>
     </div>
 
     <script src="scripts/audio-visualizer.js"></script>
@@ -321,6 +381,7 @@
         { word: "Trouwring", emoji: "💍" },
         { word: "Griss", emoji: "🪶" },
         { word: "Contactvoorkeur", emoji: "📇" },
+        { word: "Acronym", emoji: "🔤" },
       ];
 
       // Merge + deduplicate, then shuffle and loop through all words
@@ -431,7 +492,6 @@
 
       const audioPlayerEl = document.getElementById("audio-player");
       const backgroundMusicEl = document.getElementById("background-music");
-      const loopMusicEl = document.getElementById("loop-music");
       const emojiStream = window.PiniEmojiStream.createEmojiStream({
         container: document.getElementById("emoji-stream"),
       });
@@ -446,9 +506,31 @@
       window.PiniAudioPlayer.createAudioPlayerController({
         audioElement: backgroundMusicEl,
         playerElement: audioPlayerEl,
-        loopButton: loopMusicEl,
         visualizer: audioVisualizer,
+        tracks: [
+          {
+            title: "Get Well Soon",
+            src: "audio/20260916-142727-77c9dd-web-small.mp3",
+          },
+          { title: "Pini Macedonini", src: "audio/pini-background.mp3" },
+        ],
+        playlistElement: document.getElementById("playlist-menu"),
+        trackNameElement: document.getElementById("audio-track-name"),
       });
+
+      const getWellSoonAudioSrc =
+        "audio/20260916-142727-77c9dd-web-small.mp3";
+      emojiStream.setSpecialEmojis(["❤️‍🩹", "🩹"]);
+
+      function updateGetWellSoonEmojis() {
+        const isGetWellSoonPlaying =
+          !backgroundMusicEl.paused &&
+          backgroundMusicEl.currentSrc.endsWith(getWellSoonAudioSrc);
+        emojiStream.setSpecialEmojiActive(isGetWellSoonPlaying);
+      }
+
+      backgroundMusicEl.addEventListener("play", updateGetWellSoonEmojis);
+      backgroundMusicEl.addEventListener("pause", updateGetWellSoonEmojis);
 
       const useGyroTilt = window.matchMedia(
         "(hover: none) and (pointer: coarse)",

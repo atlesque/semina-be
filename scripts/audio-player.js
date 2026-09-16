@@ -1,9 +1,13 @@
 function createAudioPlayerController({
   audioElement,
   playerElement,
-  loopButton,
   visualizer,
+  tracks,
+  playlistElement,
+  trackNameElement,
 }) {
+  let currentTrackIndex = 0;
+
   function startBackgroundMusic() {
     const playback = audioElement.play();
     if (!playback || typeof playback.then !== "function") return;
@@ -22,29 +26,46 @@ function createAudioPlayerController({
     visualizer.enableFromUserGesture();
   }
 
-  function updateLoopControl() {
-    const isLooping = audioElement.loop;
-    loopButton.setAttribute("aria-pressed", String(isLooping));
-    loopButton.setAttribute(
-      "aria-label",
-      isLooping ? "Disable looping" : "Enable looping",
+  function updatePlaylistSelection() {
+    [...playlistElement.querySelectorAll("button")].forEach(
+      (button, index) => {
+        button.setAttribute(
+          "aria-current",
+          index === currentTrackIndex ? "true" : "false",
+        );
+      },
     );
-    loopButton.setAttribute(
-      "title",
-      isLooping ? "Disable looping" : "Enable looping",
-    );
+    trackNameElement.textContent = tracks[currentTrackIndex].title;
   }
+
+  function loadTrack(index, { autoplay = true } = {}) {
+    currentTrackIndex = (index + tracks.length) % tracks.length;
+    audioElement.src = tracks[currentTrackIndex].src;
+    audioElement.loop = false;
+    audioElement.load();
+    updatePlaylistSelection();
+    if (autoplay) startBackgroundMusic();
+  }
+
+  tracks.forEach((track, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = track.title;
+    button.setAttribute("aria-current", "false");
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      loadTrack(index);
+      visualizer.enableFromUserGesture();
+    });
+    playlistElement.append(button);
+  });
 
   playerElement.addEventListener("pointerdown", (event) => {
     visualizer.enableFromUserGesture();
     event.stopPropagation();
   });
-  loopButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    audioElement.loop = !audioElement.loop;
-    updateLoopControl();
-  });
-  updateLoopControl();
+  audioElement.addEventListener("ended", () => loadTrack(currentTrackIndex + 1));
+  updatePlaylistSelection();
   window.addEventListener("load", startBackgroundMusic, { once: true });
   window.addEventListener("pointerdown", unlockBackgroundMusic, {
     once: true,
