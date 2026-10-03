@@ -1,0 +1,9 @@
+{
+  "title": "Semina \u2014 MBP Melody",
+  "job_id": "20261003-222719-d89569",
+  "model": "YuE2-3B",
+  "duration_requested": 120,
+  "duration_actual": 119.839,
+  "seed": 1241021740,
+  "audio": "audio/semina-mbp-melody.mp3"
+}
