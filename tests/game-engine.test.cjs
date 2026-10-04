@@ -231,7 +231,7 @@ test('spawn composition introduces bombs in wave 3 and enforces density limits',
     assert.ok(bombs > 0);
   }
   assert.equal(WAVES[0].interval, 1000);
-  assert.equal(WAVES[5].travel, 3000);
+  assert.equal(WAVES[5].travel, 2000);
 });
 test('Zen remains untimed, harmless, one point per catch, changing only on a current target', () => {
   const { game } = setup('zen', true);

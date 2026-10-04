@@ -4,9 +4,9 @@
     { interval: 1000, travel: 5000, target: .85, bomb: 0, goal: 8 },
     { interval: 910, travel: 4600, target: .82, bomb: 0, goal: 9 },
     { interval: 820, travel: 4200, target: .78, bomb: .06, goal: 10 },
-    { interval: 730, travel: 3800, target: .75, bomb: .08, goal: 11 },
-    { interval: 640, travel: 3400, target: .72, bomb: .10, goal: 12 },
-    { interval: 550, travel: 3000, target: .70, bomb: .12, goal: 13 },
+    { interval: 650, travel: 3200, target: .75, bomb: .08, goal: 11 },
+    { interval: 520, travel: 2600, target: .72, bomb: .10, goal: 12 },
+    { interval: 400, travel: 2000, target: .70, bomb: .12, goal: 13 },
   ];
   const multiplier = combo => combo >= 20 ? 4 : combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
 
