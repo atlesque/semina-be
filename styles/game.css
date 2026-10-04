@@ -36,6 +36,8 @@ main { position: relative; height: calc(100% - 90px); }
 .hint { font-size: 12px; line-height: 1.7; max-width: 430px; margin: 20px 0 10px; }
 .record-note { max-width: 420px; font-size: 11px; line-height: 1.6; opacity: .7; }
 .title-emojis { margin-top: 18px; font-size: 30px; }
+.repo-link { display: inline-flex; margin-top: 16px; padding: 6px; border-radius: 50%; color: inherit; opacity: .7; transition: opacity .15s, transform .15s; }
+.repo-link:hover, .repo-link:focus-visible { opacity: 1; transform: scale(1.1); }
 #game-screen { height: 100%; max-width: 850px; margin: auto; position: relative; display: flex; flex-direction: column; }
 .target-panel { z-index: 1; padding: 8px 24px 14px; text-align: center; flex-shrink: 0; }
 .wave-line, .combo-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; }
