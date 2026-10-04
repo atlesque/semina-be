@@ -4,16 +4,12 @@ function createAudioPlayerController({
   visualizer,
   tracks,
   playlistElement,
+  isEnabled = () => true,
 }) {
   let currentTrackIndex = 0;
-  const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
-  const startsMuted = localHosts.has(window.location.hostname);
-
-  if (startsMuted) {
-    audioElement.muted = true;
-  }
 
   function startBackgroundMusic() {
+    if (!isEnabled()) return;
     const playback = audioElement.play();
     if (!playback || typeof playback.then !== "function") return;
 
@@ -70,11 +66,7 @@ function createAudioPlayerController({
   });
   audioElement.addEventListener("ended", () => loadTrack(currentTrackIndex + 1));
   updatePlaylistSelection();
-  window.addEventListener("load", startBackgroundMusic, { once: true });
-  window.addEventListener("pointerdown", unlockBackgroundMusic, {
-    once: true,
-    passive: true,
-  });
+  return { startBackgroundMusic };
 }
 
 window.PiniAudioPlayer = { createAudioPlayerController };
