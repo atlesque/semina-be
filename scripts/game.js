@@ -252,7 +252,8 @@
     $("player-name").disabled = $("submit-score").disabled = false;
     $("player-name").value = playerName;
     $("score-form-status").textContent = "";
-    $("score-form-status").classList.remove("error");
+    $("score-form-error").textContent = "";
+    $("results-screen").classList.remove("saved");
     $("leaderboards").hidden = !Board.isValidCategory(category);
     if ($("leaderboards").hidden) return canSubmit;
     renderLocalBoard(category);
@@ -265,13 +266,16 @@
     const name = $("player-name").value;
     const status = $("score-form-status");
     if (!Board.isValidName(name)) {
-      status.textContent = "Use 1–12 letters or digits.";
-      status.classList.add("error");
+      $("score-form-error").textContent = "Use 1–12 letters or digits.";
       $("player-name").focus();
       return;
     }
-    status.classList.remove("error");
+    $("score-form-error").textContent = "";
     $("player-name").disabled = $("submit-score").disabled = true;
+    // Once saved, the screen narrows to the boards and Play again.
+    $("score-form").hidden = true;
+    $("results-screen").classList.add("saved");
+    $("retry").focus();
     const category = recordKey;
     const score = game.state.score;
     playerName = name;
