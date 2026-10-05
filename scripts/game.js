@@ -51,6 +51,7 @@
       { title: "Semina — MBP Melody", src: "audio/semina-mbp-melody.mp3" },
       { title: "Get Well Soon", src: "audio/20260916-142727-77c9dd-web-small.mp3" },
       { title: "Pini Macedonini", src: "audio/pini-background.mp3" },
+      { title: "Pini — Metal Spark", src: "audio/pini-metal.mp3" },
     ],
     playlistElement: $("playlist-menu"), isEnabled: () => musicEnabled,
   });
