@@ -1,4 +1,3 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#ff6b6b"/>
-  <text x="32" y="47" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="42" fill="#ffffff" text-anchor="middle">P</text>
+  <path d="M32 3C35 17 47 29 61 32C47 35 35 47 32 61C29 47 17 35 3 32C17 29 29 17 32 3Z" fill="#e8556c" stroke="#e8556c" stroke-width="2" stroke-linejoin="round"/>
 </svg>
