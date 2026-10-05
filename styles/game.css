@@ -16,6 +16,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .stat strong { display: block; margin-top: 4px; font-size: 26px; font-variant-numeric: tabular-nums; }
 .hearts strong { color: #ca3255; font-size: 22px; }
 .icon-button { width: 48px; flex-shrink: 0; font-size: 23px; }
+.hud-buttons { display: flex; gap: 8px; flex-shrink: 0; }
 main { position: relative; height: calc(100% - 90px); }
 .screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: safe center; flex-direction: column; padding: 12px 24px 28px; text-align: center; overflow: auto; }
 .screen > * { flex-shrink: 0; }
@@ -62,7 +63,11 @@ progress::-moz-progress-bar { background: #ae366f; }
 .fever #wordmark { color: #a32251; text-shadow: 2px 2px #ffd06e; }
 .catch-controls { display: flex; gap: 12px; padding: 12px 16px max(16px, env(safe-area-inset-bottom)); flex-shrink: 0; }
 .catch-controls button { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 10px; height: 58px; background: #fffaf2cc; }
+.catch-controls button.ready { background: #ffd06e; border-color: #24203e; transform: translateY(-2px); box-shadow: 0 4px 0 #24203e33; }
 .lane-emoji { font-size: 27px; }
+/* Lane buttons reach an emoji once its bottom edge enters this strip. */
+#playfield::after { content: ''; position: absolute; inset: auto 0 0; height: 74px; border-top: 2px dashed #24203e2e; background: linear-gradient(transparent, #ffd06e40); pointer-events: none; }
+body.stationary #playfield::after { display: none; }
 .catch-controls small { font-size: 12px; border: 1px solid #24203e55; border-radius: 5px; padding: 1px 5px; }
 .announcement { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: #fff5e9ec; font: 40px 'Bangers', Impact, sans-serif; padding: 24px; border-radius: 24px; }
 .announcement small { font: 16px/1.7 system-ui; display: block; margin-top: 14px; }

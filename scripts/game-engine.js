@@ -3,10 +3,10 @@
   const WAVES = [
     { interval: 1000, travel: 5000, target: .85, bomb: 0, goal: 8 },
     { interval: 910, travel: 4600, target: .82, bomb: 0, goal: 9 },
-    { interval: 820, travel: 4200, target: .78, bomb: .06, goal: 10 },
-    { interval: 650, travel: 3200, target: .75, bomb: .08, goal: 11 },
-    { interval: 520, travel: 2600, target: .72, bomb: .10, goal: 12 },
-    { interval: 400, travel: 2000, target: .70, bomb: .12, goal: 13 },
+    { interval: 760, travel: 3800, target: .78, bomb: .06, goal: 10 },
+    { interval: 580, travel: 2800, target: .75, bomb: .08, goal: 11 },
+    { interval: 440, travel: 2100, target: .72, bomb: .10, goal: 12 },
+    { interval: 320, travel: 1500, target: .70, bomb: .12, goal: 13 },
   ];
   const multiplier = combo => combo >= 20 ? 4 : combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
 
@@ -15,8 +15,13 @@
     let nextId = 0;
     let wordBag = [];
     let laneGap = .28;
+    let hitZone = .2;
     function setPlayfieldHeight(height) {
-      if (Number.isFinite(height)) laneGap = Math.min(1, Math.max(.28, 70 / Math.max(1, height - 66)));
+      if (!Number.isFinite(height)) return;
+      const runway = Math.max(1, height - 66);
+      laneGap = Math.min(1, Math.max(.28, 70 / runway));
+      // Lane buttons only reach an emoji during its last 70px, where it touches them.
+      hitZone = Math.min(1, 70 / runway);
     }
     function nextWord() {
       if (!wordBag.length) {
@@ -129,8 +134,11 @@
       }
       return true;
     }
+    function catchable(lane) {
+      return s.objects.find(object => object.lane === lane && (s.stationary || object.age >= object.travel * (1 - hitZone)));
+    }
     function catchLane(lane) {
-      const object = s.objects.find(object => object.lane === lane);
+      const object = catchable(lane);
       return object ? resolve(object.id, true) : false;
     }
     function spawn() {
@@ -191,7 +199,7 @@
       while (dt > 0) dt -= step(Math.min(dt, 50));
     }
     reset();
-    return { get state() { return s; }, start, reset, pause, resume, resolve, catchLane, advance, setPlayfieldHeight };
+    return { get state() { return s; }, start, reset, pause, resume, resolve, catchable, catchLane, advance, setPlayfieldHeight };
   }
   const api = { createGame, multiplier, WAVES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
