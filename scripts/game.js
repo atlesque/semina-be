@@ -21,11 +21,23 @@
   let savedResult = false;
   let recordKey = "arcade-falling";
   let overlaySignature = "";
+  const Board = PiniLeaderboard;
+  let localBoards = {};
+  let playerName = "";
+  // Increments per results screen so late responses never paint a newer one.
+  let resultToken = 0;
   try {
     const stored = JSON.parse(localStorage.getItem("pini.records.v1") || "{}");
     for (const key of ["arcade-falling", "arcade-stationary", "zen-falling", "zen-stationary"]) {
       if (Number.isSafeInteger(stored?.[key]) && stored[key] >= 0) records[key] = stored[key];
     }
+  } catch { storageAvailable = false; }
+  try {
+    const stored = JSON.parse(localStorage.getItem("pini.leaderboard.v1") || "{}");
+    for (const key of Board.CATEGORIES) {
+      if (Array.isArray(stored?.[key])) localBoards[key] = stored[key].filter(Board.isValidEntry).slice(0, Board.BOARD_SIZE);
+    }
+    playerName = Board.cleanName(localStorage.getItem("pini.player.v1"));
   } catch { storageAvailable = false; }
   $("stationary").checked = motion.matches;
 
@@ -197,6 +209,99 @@
     }
     return isBest;
   }
+  function renderBoard(list, entries, isMine, emptyText) {
+    list.replaceChildren();
+    if (!entries.length) {
+      const empty = document.createElement("li");
+      empty.className = "board-empty";
+      empty.textContent = emptyText;
+      list.append(empty);
+      return;
+    }
+    for (const entry of entries) {
+      const item = document.createElement("li");
+      const name = document.createElement("span");
+      const score = document.createElement("strong");
+      name.textContent = entry.name;
+      score.textContent = number(entry.score);
+      item.append(name, score);
+      if (isMine(entry)) item.classList.add("mine");
+      list.append(item);
+    }
+  }
+  function renderLocalBoard(category, mine = null) {
+    renderBoard($("local-board"), localBoards[category] || [], entry => entry === mine, "No saved scores yet.");
+  }
+  async function loadGlobalBoard(category, token) {
+    const list = $("global-board");
+    renderBoard(list, [], () => false, "Loading…");
+    try {
+      const response = await fetch(`/api/scores?category=${encodeURIComponent(category)}`);
+      if (!response.ok) throw new Error(response.status);
+      const { scores } = await response.json();
+      if (token === resultToken) renderBoard(list, scores, () => false, "No global scores yet. Be the first!");
+    } catch {
+      if (token === resultToken) renderBoard(list, [], () => false, "The global board is unavailable right now.");
+    }
+  }
+  function prepareLeaderboards(score) {
+    const token = ++resultToken;
+    const category = recordKey;
+    const canSubmit = Board.isValidCategory(category) && Board.isValidScore(score);
+    $("score-form").hidden = !canSubmit;
+    $("player-name").disabled = $("submit-score").disabled = false;
+    $("player-name").value = playerName;
+    $("score-form-status").textContent = "";
+    $("score-form-status").classList.remove("error");
+    $("leaderboards").hidden = !Board.isValidCategory(category);
+    if ($("leaderboards").hidden) return canSubmit;
+    renderLocalBoard(category);
+    loadGlobalBoard(category, token);
+    return canSubmit;
+  }
+  async function submitScore(event) {
+    event.preventDefault();
+    const token = resultToken;
+    const name = $("player-name").value;
+    const status = $("score-form-status");
+    if (!Board.isValidName(name)) {
+      status.textContent = "Use 1–12 letters or digits.";
+      status.classList.add("error");
+      $("player-name").focus();
+      return;
+    }
+    status.classList.remove("error");
+    $("player-name").disabled = $("submit-score").disabled = true;
+    const category = recordKey;
+    const score = game.state.score;
+    playerName = name;
+    const entry = { name, score, at: Date.now() };
+    const { board, rank: localRank } = Board.addEntry(localBoards[category] || [], entry);
+    localBoards[category] = board;
+    try {
+      localStorage.setItem("pini.leaderboard.v1", JSON.stringify(localBoards));
+      localStorage.setItem("pini.player.v1", name);
+    } catch { storageAvailable = false; }
+    renderLocalBoard(category, entry);
+    const localText = localRank ? `#${localRank} in this browser` : "Saved in this browser";
+    status.textContent = `${localText}. Sending to the global board…`;
+    try {
+      const response = await fetch("/api/scores", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, score, category }),
+      });
+      if (!response.ok) throw new Error(response.status);
+      const result = await response.json();
+      if (token !== resultToken) return;
+      renderBoard($("global-board"), result.scores, item => item.id === result.id, "No global scores yet.");
+      status.textContent = `${localText}, #${number(result.rank)} worldwide.`;
+    } catch {
+      if (token !== resultToken) return;
+      status.textContent = `${localText}. The global board is unavailable right now.`;
+    }
+    announce(status.textContent);
+  }
   function showResults(reason) {
     if (savedResult) return;
     savedResult = true;
@@ -213,9 +318,12 @@
     $("result-catches").textContent = s.correct;
     $("result-mistakes").textContent = s.mistakes;
     $("result-record-note").textContent = storageAvailable ? "Records belong to this browser." : "Storage is unavailable. This record lasts for this visit only.";
+    const canSubmit = prepareLeaderboards(s.score);
     render();
     announce(`Run finished. Score ${s.score}. ${isBest ? "New personal best." : ""}`);
-    $("retry").focus();
+    // Avoid raising the on-screen keyboard on touch devices.
+    if (canSubmit && matchMedia("(pointer: fine)").matches) $("player-name").focus();
+    else $("retry").focus();
   }
   function home() {
     document.body.classList.add("home-screen");
@@ -366,6 +474,11 @@
   $("stationary").addEventListener("change", updateRecordKey);
   $("play").addEventListener("click", start);
   $("retry").addEventListener("click", start);
+  $("score-form").addEventListener("submit", submitScore);
+  $("player-name").addEventListener("input", event => {
+    const clean = Board.cleanName(event.target.value);
+    if (clean !== event.target.value) event.target.value = clean;
+  });
   $("restart").addEventListener("click", start);
   $("result-home").addEventListener("click", home);
   $("return-title").addEventListener("click", home);
