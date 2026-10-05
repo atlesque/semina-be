@@ -44,6 +44,7 @@
   });
   // Browsers may require a user gesture before audible playback.
   audio.muted = false;
+  audio.volume = .5;
   player.startBackgroundMusic();
   document.addEventListener("pointerdown", () => player.startBackgroundMusic(), { once: true });
   $("music-enabled").addEventListener("change", event => {
@@ -51,12 +52,28 @@
     audio.muted = !musicEnabled;
     if (musicEnabled) player.startBackgroundMusic();
     else audio.pause();
+    renderSoundToggle();
   });
   audio.addEventListener("volumechange", () => {
     musicEnabled = !audio.muted && audio.volume > 0;
     $("music-enabled").checked = musicEnabled;
+    renderSoundToggle();
   });
-  $("effects-enabled").addEventListener("change", event => { effectsEnabled = event.target.checked; });
+  $("effects-enabled").addEventListener("change", event => { effectsEnabled = event.target.checked; renderSoundToggle(); });
+  // The HUD toggle mutes everything; unmuting restores both music and effects.
+  $("sound-toggle").addEventListener("click", () => {
+    const on = !(musicEnabled || effectsEnabled);
+    for (const id of ["music-enabled", "effects-enabled"]) {
+      $(id).checked = on;
+      $(id).dispatchEvent(new Event("change"));
+    }
+  });
+  function renderSoundToggle() {
+    const muted = !(musicEnabled || effectsEnabled);
+    $("sound-toggle").textContent = muted ? "🔇" : "🔊";
+    $("sound-toggle").setAttribute("aria-pressed", String(muted));
+    $("sound-toggle").setAttribute("aria-label", muted ? "Unmute sound" : "Mute sound");
+  }
 
   function tone(frequency = 520, duration = .08) {
     if (!effectsEnabled) return;
@@ -260,7 +277,8 @@
       node.disabled = s.phase !== "playing";
     }
     for (const [lane, button] of lanes.entries()) {
-      const object = s.objects.find(object => object.lane === lane);
+      const object = game.catchable(lane);
+      button.classList.toggle("ready", Boolean(object));
       button.querySelector(".lane-emoji").textContent = object?.emoji || "—";
       button.setAttribute("aria-label", `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`);
     }

@@ -96,12 +96,27 @@ test('escaped targets reset combo without losing a heart; other escapes are harm
 test('empty lanes have no effect and oldest object in a lane is caught first', () => {
   const { game } = setup();
   assert.equal(game.catchLane(0), false);
-  const a = object(game);
-  const b = object(game, 'bomb');
+  const a = object(game, 'target', { age: 4900 });
+  const b = object(game, 'bomb', { age: 4900 });
   game.catchLane(0);
   assert.equal(game.state.correct, 1);
   assert.ok(!game.state.objects.some(o => o.id === a.id));
   assert.ok(game.state.objects.some(o => o.id === b.id));
+});
+test('lane buttons only catch emojis touching the bottom of the playfield', () => {
+  const { game } = setup();
+  game.setPlayfieldHeight(416);
+  const item = object(game, 'target', { age: 3900 });
+  assert.equal(game.catchLane(0), false);
+  assert.equal(game.state.combo, 0);
+  item.age = 4000;
+  assert.equal(game.catchLane(0), true);
+  assert.equal(game.state.correct, 1);
+});
+test('stationary lane buttons catch regardless of fall progress', () => {
+  const { game } = setup('arcade', true);
+  object(game);
+  assert.equal(game.catchLane(0), true);
 });
 test('pause freezes every simulation value and rejects catches', () => {
   const { game } = setup();
@@ -231,7 +246,7 @@ test('spawn composition introduces bombs in wave 3 and enforces density limits',
     assert.ok(bombs > 0);
   }
   assert.equal(WAVES[0].interval, 1000);
-  assert.equal(WAVES[5].travel, 3000);
+  assert.equal(WAVES[5].travel, 1500);
 });
 test('Zen remains untimed, harmless, one point per catch, changing only on a current target', () => {
   const { game } = setup('zen', true);
