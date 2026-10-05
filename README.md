@@ -64,3 +64,11 @@ node --test tests/*.test.*
 This implements the specification's first release. Power-ups, cosmetics, challenge
 variants, daily challenges, survival, and bosses remain future releases. Difficulty
 values are initial playtest tuning, not a guarantee of a particular success rate.
+
+## Icons and sharing
+
+The favicon is the pink PINI star (`favicon.svg`), with PNG/ICO fallbacks, an
+`apple-touch-icon.png` and `icon-192.png`/`icon-512.png` for `site.webmanifest`. `og-image.png`
+(1200×630) is the social sharing card and mirrors the title screen. `robots.txt` and
+`sitemap.xml` point crawlers at `https://semina.be/`. If the star or title design changes,
+regenerate the PNGs so they stay in sync.
