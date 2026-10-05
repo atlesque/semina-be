@@ -82,15 +82,34 @@
         <div class="eyebrow" id="result-title">Nice run!</div>
         <h2 id="final-score">0</h2>
         <p id="personal-best">Personal best: 0</p>
+        <form id="score-form" class="score-form" novalidate>
+          <label for="player-name">Name for the leaderboard <small>Letters and digits, up to 12</small></label>
+          <div class="score-form-row">
+            <input id="player-name" name="name" type="text" inputmode="text" maxlength="12" pattern="[A-Za-z0-9]{1,12}" autocomplete="nickname" autocapitalize="off" spellcheck="false" required aria-describedby="score-form-error">
+            <button id="submit-score" type="submit" class="secondary">Save score</button>
+          </div>
+          <p id="score-form-error" class="score-form-status error" role="alert"></p>
+        </form>
+        <p id="score-form-status" class="score-form-status" role="status"></p>
         <button id="retry" class="primary">Play again →</button>
-        <dl class="results-stats">
+        <div id="leaderboards" class="leaderboards" aria-label="Leaderboards">
+          <section aria-labelledby="local-board-title">
+            <h3 id="local-board-title">This browser</h3>
+            <ol id="local-board" class="board"></ol>
+          </section>
+          <section aria-labelledby="global-board-title">
+            <h3 id="global-board-title">Global</h3>
+            <ol id="global-board" class="board"></ol>
+          </section>
+        </div>
+        <dl class="results-stats hide-when-saved">
           <div><dt>Best combo</dt><dd id="result-combo">0</dd></div>
           <div><dt>Waves completed</dt><dd id="result-waves">0 / 6</dd></div>
           <div><dt>Correct catches</dt><dd id="result-catches">0</dd></div>
           <div><dt>Mistakes</dt><dd id="result-mistakes">0</dd></div>
         </dl>
-        <button id="result-home" class="secondary">Back to title</button>
-        <p class="record-note" id="result-record-note">Records belong to this browser.</p>
+        <button id="result-home" class="secondary hide-when-saved">Back to title</button>
+        <p class="record-note hide-when-saved" id="result-record-note">Records belong to this browser.</p>
       </section>
     </main>
 
@@ -115,6 +134,7 @@
     <div id="live-events" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="scripts/words.js"></script>
     <script src="scripts/game-engine.js"></script>
+    <script src="scripts/leaderboard.js"></script>
     <script src="scripts/audio-visualizer.js"></script>
     <script src="scripts/audio-player.js"></script>
     <script src="scripts/game.js"></script>

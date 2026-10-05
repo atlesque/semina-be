@@ -85,6 +85,25 @@ body.paused #audio-glow { visibility: hidden; }
 .results-stats dt { font-size: 12px; opacity: .7; }
 .results-stats dd { font-size: 26px; font-weight: 800; margin: 6px 0 0; }
 .results-screen .record-note { margin-top: 18px; }
+.score-form { width: min(100%, 400px); margin: 0 0 20px; text-align: left; }
+.score-form label { display: block; font-size: 13px; font-weight: 750; margin-bottom: 6px; }
+.score-form label small { font-weight: 500; opacity: .7; }
+.score-form-row { display: flex; gap: 8px; }
+.score-form input { flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; border: 2px solid #24203e; border-radius: 16px; background: #fffaf2; color: inherit; font-size: 18px; font-weight: 700; }
+.score-form-status { margin: 6px 0 0; font-size: 13px; }
+.score-form-status:empty { display: none; }
+.results-screen > .score-form-status { margin: 0 0 20px; font-weight: 700; }
+.results-screen.saved .hide-when-saved { display: none; }
+.score-form-status.error { color: #a52341; font-weight: 700; }
+.leaderboards { width: min(100%, 520px); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; text-align: left; }
+.leaderboards h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
+.board { margin: 0; padding: 8px 10px; list-style: none; counter-reset: rank; border: 2px solid #24203e22; border-radius: 16px; background: #ffffff60; font-size: 14px; font-variant-numeric: tabular-nums; }
+.board li { display: flex; align-items: baseline; gap: 6px; padding: 3px 0; counter-increment: rank; }
+.board li::before { content: counter(rank) "."; min-width: 2.2ch; text-align: right; opacity: .7; }
+.board li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.board .mine { color: #a32251; font-weight: 800; }
+.board .board-empty { opacity: .7; font-size: 13px; }
+.board .board-empty::before { content: none; }
 dialog { border: 2px solid #24203e; border-radius: 24px; color: #24203e; background: #fff5e9; width: min(420px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 24px; }
 dialog::backdrop { background: #24203e80; backdrop-filter: blur(5px); }
 .menu-card { display: flex; flex-direction: column; gap: 14px; text-align: center; }
@@ -111,6 +130,9 @@ audio { width: 100%; height: 40px; margin-bottom: 14px; }
   .intro { font-size: 14px; margin-bottom: 16px; }
   .title-emojis { display: none; }
   .hint { margin-top: 16px; }
+  .leaderboards { gap: 8px; }
+  .board { padding: 6px; font-size: 12px; }
+  .board li { gap: 4px; }
 }
 @media (max-height: 650px) {
   .title-screen { justify-content: flex-start; }

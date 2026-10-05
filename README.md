@@ -19,11 +19,46 @@ Records are stored locally under `pini.records.v1`, separately for Arcade/Zen an
 falling/stationary play. If storage is unavailable, records last for the visit.
 Zen records are saved when leaving or restarting a session.
 
+## Leaderboards
+
+When an Arcade run ends, players can enter a name (1–12 letters or digits, checked in the
+browser and again on the server). Each saved score goes to two top-10 boards shown side by
+side on the results screen, separately for falling and stationary play:
+
+- **This browser**: kept in `localStorage` under `pini.leaderboard.v1`; the last name used is
+  remembered under `pini.player.v1`.
+- **Global**: stored in Cloudflare D1 through the Pages Function `functions/api/scores.js`
+  (`GET /api/scores?category=arcade-falling`, `POST /api/scores` with `{ name, score, category }`).
+
+If the API or database is unavailable, the local board still works and the global board says so.
+Scores are reported by the browser, so treat the global board as a friendly board rather than a
+cheat-proof one; the server only rejects malformed names, categories and implausible scores.
+
+### Cloudflare setup
+
+The site deploys as a Cloudflare Pages project, which picks up the `functions/` folder automatically.
+
+1. Create a D1 database, for example `npx wrangler d1 create <database-name>`, or in the
+   dashboard under **Storage & Databases → D1**.
+2. Create the table:
+   `npx wrangler d1 execute <database-name> --remote --file=migrations/0001_create_scores.sql`
+   (or paste the file into the D1 console).
+3. In the Pages project, open **Settings → Bindings → Add → D1 database**, set the variable name
+   to `DB` and pick the database. Add it for Production and, if you want previews to work, Preview.
+4. Redeploy. Until the binding exists, `/api/scores` answers `503` and the game shows the global
+   board as unavailable.
+
+To run the API locally: `npx wrangler pages dev . --d1 DB=<database-name>` after applying the
+migration with `--local`.
+
+## Development
+
 The pure simulation lives in `scripts/game-engine.js`; presentation and browser
-integration are in `scripts/game.js`. Run the rules tests with:
+integration are in `scripts/game.js`. Run the tests (Node 22 or newer; the API tests use the
+built-in `node:sqlite` as a stand-in for D1) with:
 
 ```sh
-node --test tests/game-engine.test.cjs
+node --test tests/*.test.*
 ```
 
 This implements the specification's first release. Power-ups, cosmetics, challenge
