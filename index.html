@@ -69,7 +69,7 @@
       <a class="brand" href="#" id="brand" aria-label="Pini title">Pini<span>✦</span></a>
       <div class="stat run-stat"><small>Score</small><strong id="score">0</strong></div>
       <div class="stat"><small>Best · this browser</small><strong id="best">0</strong></div>
-      <div class="stat run-stat"><small id="time-label">Time</small><strong id="timer">1:30</strong></div>
+      <div class="stat run-stat timer-stat"><small id="time-label">Time</small><strong id="timer">1:30</strong></div>
       <div class="stat hearts run-stat"><small>Lives</small><strong id="hearts" aria-label="3 hearts">♥ ♥ ♥</strong></div>
       <div class="hud-buttons">
         <button id="sound-toggle" class="icon-button" aria-label="Mute sound" aria-pressed="false">🔊</button>
@@ -116,6 +116,10 @@
         <div class="eyebrow" id="result-title">Nice run!</div>
         <h2 id="final-score">0</h2>
         <p id="personal-best">Personal best: 0</p>
+        <figure id="trophy" class="trophy" hidden>
+          <canvas id="trophy-canvas" role="img" aria-label="Trophy"></canvas>
+          <figcaption id="trophy-caption"></figcaption>
+        </figure>
         <form id="score-form" class="score-form" novalidate>
           <label for="player-name">Name for the leaderboard <small>Letters and digits, up to 12</small></label>
           <div class="score-form-row">
@@ -170,6 +174,7 @@
     <script src="scripts/words.js"></script>
     <script src="scripts/game-engine.js"></script>
     <script src="scripts/leaderboard.js"></script>
+    <script src="scripts/trophy.js"></script>
     <script src="scripts/audio-visualizer.js"></script>
     <script src="scripts/audio-player.js"></script>
     <script src="scripts/game.js"></script>

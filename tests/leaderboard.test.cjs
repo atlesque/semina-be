@@ -31,3 +31,9 @@ test('stored entries that fail validation are dropped', () => {
   const { board } = Board.addEntry([{ name: 'bad name', score: 5, at: 1 }, { name: 'ok', score: 'x', at: 2 }], { name: 'ok', score: 5, at: 3 });
   assert.deepEqual(board.map(entry => entry.name), ['ok']);
 });
+test('global ranks 1 to 3 map to gold, silver and bronze trophies', () => {
+  assert.equal(Board.podiumTier(1), 'gold');
+  assert.equal(Board.podiumTier(2), 'silver');
+  assert.equal(Board.podiumTier(3), 'bronze');
+  for (const rank of [0, 4, 10, null, undefined, 1.5, '1']) assert.equal(Board.podiumTier(rank), null, String(rank));
+});

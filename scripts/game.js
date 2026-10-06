@@ -260,7 +260,7 @@
   }
   function start() {
     player.playPlaylist();
-    document.body.classList.remove("home-screen");
+    document.body.classList.remove("home-screen", "results-open");
     if (game.state.mode === "zen" && game.state.target) rememberBest();
     if (menu.open) menu.close();
     clearVisuals();
@@ -331,6 +331,7 @@
     $("score-form-status").textContent = "";
     $("score-form-error").textContent = "";
     $("results-screen").classList.remove("saved");
+    hideTrophy();
     $("leaderboards").hidden = !Board.isValidCategory(category);
     if ($("leaderboards").hidden) return canSubmit;
     renderLocalBoard(category);
@@ -377,11 +378,27 @@
       if (token !== resultToken) return;
       renderBoard($("global-board"), result.scores, item => item.id === result.id, "No global scores yet.");
       status.textContent = `${localText}, #${number(result.rank)} worldwide.`;
+      showTrophy(result.rank);
     } catch {
       if (token !== resultToken) return;
       status.textContent = `${localText}. The global board is unavailable right now.`;
     }
     announce(status.textContent);
+  }
+  function showTrophy(rank) {
+    const tier = Board.podiumTier(rank);
+    if (!tier) return;
+    const label = `${tier[0].toUpperCase()}${tier.slice(1)} trophy`;
+    const figure = $("trophy");
+    figure.className = `trophy ${tier}`;
+    $("trophy-caption").textContent = `${label} · #${rank} worldwide`;
+    $("trophy-canvas").setAttribute("aria-label", `${label} for finishing #${rank} on the global board`);
+    figure.hidden = false;
+    if (!PiniTrophy.show($("trophy-canvas"), tier, motion.matches)) figure.classList.add("flat");
+  }
+  function hideTrophy() {
+    PiniTrophy.stop();
+    $("trophy").hidden = true;
   }
   function showResults(reason) {
     if (savedResult) return;
@@ -391,6 +408,7 @@
     const isBest = rememberBest();
     $("game-screen").hidden = true;
     $("results-screen").hidden = false;
+    document.body.classList.add("results-open");
     $("result-title").textContent = reason === "hearts" ? "Out of hearts. Another try?" : "90 seconds. Nicely caught!";
     $("personal-best").textContent = `${isBest ? "✦ New personal best!" : "Personal best:"} ${number(records[recordKey] || 0)}`;
     $("result-combo").textContent = s.bestCombo;
@@ -423,6 +441,7 @@
   function home() {
     player.playBackgroundTheme();
     document.body.classList.add("home-screen");
+    document.body.classList.remove("results-open");
     // Zen has no end condition; retain its record when leaving a session.
     if (game.state.mode === "zen" && game.state.target) rememberBest();
     game.reset(mode, $("stationary").checked);
@@ -494,7 +513,6 @@
     for (const [lane, button] of lanes.entries()) {
       const object = game.catchable(lane);
       if (object) ready.add(object.id);
-      button.classList.toggle("ready", Boolean(object));
       setText(laneEmojis[lane], object?.emoji || "—");
       setAttr(button, "aria-label", `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`);
     }
@@ -609,13 +627,21 @@
     else $("menu-button").focus();
     render();
   });
-  for (const button of lanes) button.addEventListener("click", () => { game.catchLane(Number(button.dataset.lane)); render(); });
+  // Lanes only light up when pressed: a bright flash on a catch, a dull one on an empty hit zone.
+  function pressLane(lane) {
+    if (game.state.phase !== "playing") return;
+    const button = lanes[lane];
+    button.classList.remove("hit", "miss");
+    kick(button, game.catchable(lane) ? "hit" : "miss");
+    game.catchLane(lane);
+    render();
+  }
+  for (const button of lanes) button.addEventListener("click", () => pressLane(Number(button.dataset.lane)));
   document.addEventListener("keydown", event => {
     if (menu.open || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
     if (["1", "2", "3", "4"].includes(event.key) && !event.repeat && game.state.phase === "playing") {
       event.preventDefault();
-      game.catchLane(Number(event.key) - 1);
-      render();
+      pressLane(Number(event.key) - 1);
     } else if ((event.key === "Escape" || event.key.toLowerCase() === "p") && ["playing", "wave", "resume", "paused"].includes(game.state.phase)) openMenu();
   });
   document.addEventListener("visibilitychange", () => {

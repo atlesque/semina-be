@@ -5,7 +5,7 @@
   const BOARD_SIZE = 10;
   // Only Arcade runs end with a result; Zen has no finish to submit.
   const CATEGORIES = ["arcade-falling", "arcade-stationary"];
-  // 281 spawns in 90 s at 800 points (×4 combo, ×2 Fever) plus six wave bonuses stays under this.
+  // At most 101 spawns in 90 s at 800 points (×4 combo, ×2 Fever) plus six wave bonuses stays far under this.
   const MAX_SCORE = 300000;
 
   // Used while typing: drops anything that is not a letter or digit.
@@ -23,7 +23,11 @@
     return { board: board.slice(0, BOARD_SIZE), rank: rank <= BOARD_SIZE ? rank : null };
   }
 
-  const api = { NAME_MAX_LENGTH, NAME_PATTERN, BOARD_SIZE, CATEGORIES, MAX_SCORE, cleanName, isValidName, isValidScore, isValidCategory, isValidEntry, addEntry };
+  // Global ranks 1–3 earn a trophy on the results screen.
+  const PODIUM = ["gold", "silver", "bronze"];
+  const podiumTier = rank => (Number.isInteger(rank) && PODIUM[rank - 1]) || null;
+
+  const api = { podiumTier, NAME_MAX_LENGTH, NAME_PATTERN, BOARD_SIZE, CATEGORIES, MAX_SCORE, cleanName, isValidName, isValidScore, isValidCategory, isValidEntry, addEntry };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.PiniLeaderboard = api;
 })(typeof window !== "undefined" ? window : globalThis);

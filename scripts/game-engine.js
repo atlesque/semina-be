@@ -1,12 +1,13 @@
 (function (root) {
   "use strict";
+  // Fast falls with wide gaps: roughly two or three emojis on screen at once.
   const WAVES = [
-    { interval: 1000, travel: 5000, target: .85, bomb: 0, goal: 8 },
-    { interval: 910, travel: 4600, target: .82, bomb: 0, goal: 9 },
-    { interval: 760, travel: 3800, target: .78, bomb: .06, goal: 10 },
-    { interval: 580, travel: 2800, target: .75, bomb: .08, goal: 11 },
-    { interval: 440, travel: 2100, target: .72, bomb: .10, goal: 12 },
-    { interval: 320, travel: 1500, target: .70, bomb: .12, goal: 13 },
+    { interval: 1300, travel: 3400, target: .85, bomb: 0, goal: 8 },
+    { interval: 1200, travel: 3100, target: .82, bomb: 0, goal: 8 },
+    { interval: 1050, travel: 2700, target: .78, bomb: .06, goal: 9 },
+    { interval: 900, travel: 2200, target: .75, bomb: .08, goal: 10 },
+    { interval: 760, travel: 1800, target: .72, bomb: .10, goal: 11 },
+    { interval: 640, travel: 1400, target: .70, bomb: .12, goal: 13 },
   ];
   const multiplier = combo => combo >= 20 ? 4 : combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
 
@@ -16,13 +17,19 @@
     let wordBag = [];
     let laneGap = .28;
     let hitZone = .2;
+    let overshoot = .18;
     function setPlayfieldHeight(height) {
       if (!Number.isFinite(height)) return;
       const runway = Math.max(1, height - 66);
-      laneGap = Math.min(1, Math.max(.28, 70 / runway));
+      // Uncapped: on short fields a lane waits until the previous tile has fallen a full tile height.
+      laneGap = Math.max(.28, 70 / runway);
       // Lane buttons only reach an emoji during its last 70px, where it touches them.
       hitZone = Math.min(1, 70 / runway);
+      // Emojis keep falling past the bottom and only leave once their 58px tile is fully off screen.
+      overshoot = 62 / runway;
     }
+    // Stationary tiles never move, so they expire at the end of their travel time.
+    const exitAge = object => object.travel * (s.stationary ? 1 : 1 + overshoot);
     function nextWord() {
       if (!wordBag.length) {
         wordBag = [...words];
@@ -135,7 +142,7 @@
       return true;
     }
     function catchable(lane) {
-      return s.objects.find(object => object.lane === lane && (s.stationary || object.age >= object.travel * (1 - hitZone)));
+      return s.objects.find(object => object.lane === lane && object.age < exitAge(object) && (s.stationary || object.age >= object.travel * (1 - hitZone)));
     }
     function catchLane(lane) {
       const object = catchable(lane);
@@ -185,7 +192,7 @@
       }
       for (const object of [...s.objects]) {
         object.age += used;
-        if (object.age >= object.travel) resolve(object.id, false);
+        if (object.age >= exitAge(object)) resolve(object.id, false);
       }
       s.spawnIn -= used;
       if (s.spawnIn <= 0) {
