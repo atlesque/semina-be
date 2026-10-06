@@ -9,6 +9,7 @@
   const menu = $("game-menu");
   const lanes = [...document.querySelectorAll("[data-lane]")];
   const objectNodes = new Map();
+  const textCache = new WeakMap();
   let mode = "arcade";
   let records = {};
   let storageAvailable = true;
@@ -104,10 +105,27 @@
       oscillator.stop(audioContext.currentTime + duration);
     } catch { /* Sound is optional, including on browsers without Web Audio. */ }
   }
+  // Per-frame renders only touch the DOM when a value actually changes.
+  function setText(node, text) {
+    if (textCache.get(node) === text) return;
+    textCache.set(node, text);
+    node.textContent = text;
+  }
+  const still = () => game.state.stationary || motion.matches;
+  // Restarts a one-shot CSS animation class.
+  function kick(node, className) {
+    node.classList.remove(className);
+    void node.offsetWidth;
+    node.classList.add(className);
+  }
+  function buzz(pattern) {
+    if (effectsEnabled && !still()) navigator.vibrate?.(pattern);
+  }
   function announce(message) { $("live-events").textContent = message; }
   function feedback(message) {
     $("feedback").textContent = message;
     $("feedback").hidden = false;
+    kick($("feedback"), "pop");
     feedbackTime = 1200;
   }
   function displayWord(word) {
@@ -119,42 +137,70 @@
     visuals = [];
     feedbackTime = 0;
     $("feedback").hidden = true;
-    $("combo").classList.remove("pulse");
+    $("combo").classList.remove("pulse", "bump", "dropped");
+    $("damage-flash").classList.remove("on");
+    $("game-screen").classList.remove("shake");
+  }
+  function addVisual(className, x, y, duration, text = "") {
+    const node = document.createElement("span");
+    node.className = className;
+    node.textContent = text;
+    node.style.left = `${x}px`;
+    node.style.top = `${y}px`;
+    node.setAttribute("aria-hidden", "true");
+    field.append(node);
+    visuals.push({ node, age: 0, duration });
+    return node;
   }
   function catchEffect(object, points) {
     const bounds = objectNodes.get(object.id)?.getBoundingClientRect();
     const fieldBounds = field.getBoundingClientRect();
     const x = bounds ? bounds.left + bounds.width / 2 - fieldBounds.left : field.clientWidth * (object.lane + .5) / 4;
     const y = bounds ? bounds.top + bounds.height / 2 - fieldBounds.top : field.clientHeight / 2;
-    const popup = document.createElement("span");
-    popup.className = "points";
-    popup.textContent = `+${points}`;
-    popup.style.left = `${x}px`;
-    popup.style.top = `${Math.max(24, y)}px`;
-    popup.setAttribute("aria-hidden", "true");
-    field.append(popup);
-    visuals.push({ node: popup, age: 0, duration: 700, x, y: Math.max(24, y), dx: 0, dy: -32 });
-    if (game.state.stationary || motion.matches) return;
-    for (let i = 0; i < (game.state.feverTime ? 9 : 5); i++) {
-      const petal = document.createElement("span");
-      petal.className = "particle";
-      petal.textContent = ["🌸", "✦", "🌼"][i % 3];
-      petal.setAttribute("aria-hidden", "true");
-      field.append(petal);
-      const angle = i * Math.PI * 2 / 5;
-      visuals.push({ node: petal, age: 0, duration: 650, x, y, dx: Math.cos(angle) * 55, dy: Math.sin(angle) * 55 });
+    const fever = game.state.feverTime > 0;
+    const tier = PiniGame.multiplier(game.state.combo);
+    const popup = addVisual(`points${fever ? " fever" : tier > 1 ? ` x${tier}` : ""}`, x, Math.max(24, y), 750, `+${points}`);
+    if (still()) { popup.dataset.fade = ""; return; }
+    addVisual("catch-ring", x, y, 450);
+    const count = fever ? 10 : tier > 2 ? 8 : 6;
+    const glyphs = fever ? ["✦", "🔥", "💖"] : ["🌸", "✦", "🌼"];
+    for (let i = 0; i < count; i++) {
+      const angle = i * Math.PI * 2 / count + Math.random() * .4;
+      const reach = 45 + Math.random() * 25 + (fever ? 15 : 0);
+      const petal = addVisual("particle", x, y, 650, glyphs[i % 3]);
+      petal.style.setProperty("--dx", `${Math.cos(angle) * reach}px`);
+      petal.style.setProperty("--dy", `${Math.sin(angle) * reach}px`);
+      petal.style.setProperty("--rot", `${(Math.random() - .5) * 240}deg`);
     }
+  }
+  function damageEffect() {
+    kick($("damage-flash"), "on");
+    kick($("hearts").parentElement, "hit");
+    if (!still()) kick($("game-screen"), "shake");
+    buzz(60);
+  }
+  // Each wave quickens the lane streaks a little.
+  function setTempo() {
+    const s = game.state;
+    field.style.setProperty("--tempo", `${s.mode === "zen" ? 3 : 2.4 - s.wave * .32}s`);
+    field.style.setProperty("--intensity", s.mode === "zen" ? .2 : .25 + s.wave * .08);
   }
   function handleEvent(event) {
     switch (event.type) {
       case "wave":
         clearVisuals();
         document.body.style.backgroundColor = palettes[game.state.wave];
+        setTempo();
         announce(game.state.mode === "zen" ? `Zen mode. Catch ${event.target.word}, ${event.target.emoji}. Every catch counts.` : `Wave ${event.wave}. Catch ${event.target.word}, ${event.target.emoji}. Avoid the others.`);
         break;
       case "target": announce(`Catch ${event.target.word}, ${event.target.emoji}.`); break;
-      case "catch": catchEffect(event.object, event.points); tone(520 + Math.min(game.state.combo, 20) * 18); break;
-      case "combo-break": feedback("Combo broken — keep going!"); break;
+      case "catch":
+        catchEffect(event.object, event.points);
+        kick($("score"), "bump");
+        if (game.state.mode !== "zen") kick($("combo"), "bump");
+        tone(520 + Math.min(game.state.combo, 20) * 18);
+        break;
+      case "combo-break": feedback("Combo broken — keep going!"); kick($("combo"), "dropped"); break;
       case "milestone":
         feedback(`×${event.multiplier} multiplier!`);
         announce(`Combo multiplier ${event.multiplier}.`);
@@ -163,8 +209,13 @@
         $("combo").classList.add("pulse");
         tone(1040, .2);
         break;
-      case "damage": feedback("Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); tone(160, .18); break;
-      case "fever": feedback("FEVER! Double points ✦"); announce("Fever! Double points for eight seconds."); tone(1400, .3); break;
+      case "damage": feedback("Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); damageEffect(); tone(160, .18); break;
+      case "fever":
+        feedback("FEVER! Double points ✦");
+        announce("Fever! Double points for eight seconds.");
+        buzz([30, 40, 30]);
+        tone(1400, .3);
+        break;
       case "wave-clear": feedback("Wave clear! +500 ✦"); announce("Wave catch goal complete. 500 bonus points."); tone(880, .2); break;
       case "finish": showResults(event.reason); break;
       case "pause": announce("Game paused."); break;
@@ -172,14 +223,14 @@
   }
   function updateRecordKey() {
     recordKey = `${mode}-${$("stationary").checked ? "stationary" : "falling"}`;
-    $("best").textContent = number(records[recordKey] || 0);
+    setText($("best"), number(records[recordKey] || 0));
   }
   function selectMode(selected) {
     mode = selected;
     $("arcade-mode").setAttribute("aria-pressed", String(mode === "arcade"));
     $("zen-mode").setAttribute("aria-pressed", String(mode === "zen"));
-    $("timer").textContent = mode === "arcade" ? "1:30" : "∞";
-    $("hearts").textContent = mode === "arcade" ? "♥ ♥ ♥" : "—";
+    setText($("timer"), mode === "arcade" ? "1:30" : "∞");
+    setText($("hearts"), mode === "arcade" ? "♥ ♥ ♥" : "—");
     updateRecordKey();
   }
   function start() {
@@ -316,7 +367,6 @@
     $("game-screen").hidden = true;
     $("results-screen").hidden = false;
     $("result-title").textContent = reason === "hearts" ? "Out of hearts. Another try?" : "90 seconds. Nicely caught!";
-    $("final-score").textContent = number(s.score);
     $("personal-best").textContent = `${isBest ? "✦ New personal best!" : "Personal best:"} ${number(records[recordKey] || 0)}`;
     $("result-combo").textContent = s.bestCombo;
     $("result-waves").textContent = `${s.wavesCompleted} / 6`;
@@ -324,11 +374,26 @@
     $("result-mistakes").textContent = s.mistakes;
     $("result-record-note").textContent = storageAvailable ? "Records belong to this browser." : "Storage is unavailable. This record lasts for this visit only.";
     const canSubmit = prepareLeaderboards(s.score);
+    countUp($("final-score"), s.score);
     render();
     announce(`Run finished. Score ${s.score}. ${isBest ? "New personal best." : ""}`);
     // Avoid raising the on-screen keyboard on touch devices.
     if (canSubmit && matchMedia("(pointer: fine)").matches) $("player-name").focus();
     else $("retry").focus();
+  }
+  function countUp(node, value) {
+    const token = resultToken;
+    if (motion.matches || value < 100) { node.textContent = number(value); return; }
+    const begin = performance.now();
+    const tick = now => {
+      // A newer results screen owns the node once resultToken moves on.
+      if (token !== resultToken || $("results-screen").hidden) return;
+      const progress = Math.min(1, (now - begin) / 900);
+      node.textContent = number(Math.round(value * (1 - (1 - progress) ** 3)));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    node.textContent = "0";
+    requestAnimationFrame(tick);
   }
   function home() {
     document.body.classList.add("home-screen");
@@ -343,7 +408,7 @@
     document.body.style.backgroundColor = "#fff5e9";
     document.body.classList.remove("fever", "paused", "stationary");
     selectMode(mode);
-    $("score").textContent = "0";
+    setText($("score"), "0");
     $("play").focus();
   }
   function openMenu() {
@@ -359,6 +424,8 @@
   function renderObjects() {
     const s = game.state;
     const ids = new Set(s.objects.map(object => object.id));
+    const height = field.clientHeight;
+    const sway = !still();
     for (const [id, node] of objectNodes) {
       if (!ids.has(id)) { node.remove(); objectNodes.delete(id); }
     }
@@ -386,38 +453,50 @@
         field.append(node);
       }
       node.style.left = `${(object.lane + .5) * 25}%`;
-      node.style.top = `${s.stationary ? Math.max(8, (field.clientHeight - 58) / 2) : 4 + object.age / object.travel * Math.max(0, field.clientHeight - 66)}px`;
+      // Transforms keep falling objects on the compositor instead of re-running layout each frame.
+      const y = s.stationary ? Math.max(8, (height - 58) / 2) : 4 + object.age / object.travel * Math.max(0, height - 66);
+      const tilt = sway ? Math.sin(object.age / 260 + object.id) * 7 : 0;
+      node.style.transform = `translate3d(-50%, ${y.toFixed(1)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
       node.disabled = s.phase !== "playing";
     }
+    const ready = new Set();
     for (const [lane, button] of lanes.entries()) {
       const object = game.catchable(lane);
+      if (object) ready.add(object.id);
       button.classList.toggle("ready", Boolean(object));
-      button.querySelector(".lane-emoji").textContent = object?.emoji || "—";
-      button.setAttribute("aria-label", `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`);
+      setText(button.querySelector(".lane-emoji"), object?.emoji || "—");
+      const label = `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`;
+      if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
     }
+    for (const [id, node] of objectNodes) node.classList.toggle("in-zone", ready.has(id));
   }
   function render() {
     const s = game.state;
-    $("score").textContent = number(s.score);
-    $("best").textContent = number(records[recordKey] || 0);
+    setText($("score"), number(s.score));
+    setText($("best"), number(records[recordKey] || 0));
     if (s.phase === "title") {
       selectMode(mode);
       return;
     }
-    $("timer").textContent = s.mode === "zen" ? "∞" : `${Math.floor(Math.ceil((90000 - s.elapsed) / 1000) / 60)}:${String(Math.ceil((90000 - s.elapsed) / 1000) % 60).padStart(2, "0")}`;
-    $("hearts").textContent = s.mode === "zen" ? "—" : "♥ ".repeat(s.hearts).trim() || "♡ ♡ ♡";
+    const secondsLeft = Math.ceil((90000 - s.elapsed) / 1000);
+    setText($("timer"), s.mode === "zen" ? "∞" : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`);
+    $("timer").parentElement.classList.toggle("urgent", s.mode === "arcade" && s.phase === "playing" && secondsLeft <= 10);
+    $("hearts").parentElement.classList.toggle("critical", s.mode === "arcade" && s.hearts === 1);
+    setText($("hearts"), s.mode === "zen" ? "—" : "♥ ".repeat(s.hearts).trim() || "♡ ♡ ♡");
     $("hearts").setAttribute("aria-label", s.mode === "zen" ? "Unlimited lives" : `${s.hearts} hearts`);
     document.body.classList.toggle("fever", s.feverTime > 0 && !["title", "results"].includes(s.phase));
     document.body.classList.toggle("paused", s.phase !== "playing");
     if (!s.target) return;
-    $("wordmark").textContent = displayWord(s.target.word);
-    $("target-emoji").textContent = s.target.emoji;
-    $("instruction").textContent = s.mode === "zen" ? `Catch ${s.target.emoji}. Take your time.` : `Catch ${s.target.emoji}. Avoid the others.`;
-    $("wave-label").textContent = s.mode === "zen" ? "Zen · just for joy" : `Wave ${s.wave + 1} / 6`;
-    $("wave-goal").textContent = s.mode === "zen" ? "Every catch counts" : s.waveAwarded ? "Goal complete! +500" : `Goal: ${s.waveCatches} / ${PiniGame.WAVES[s.wave].goal} · +500`;
-    $("combo").textContent = `${s.combo} combo · ×${PiniGame.multiplier(s.combo)}`;
+    const word = displayWord(s.target.word);
+    if (textCache.get($("wordmark")) !== word && !still()) kick($("wordmark"), "enter");
+    setText($("wordmark"), word);
+    setText($("target-emoji"), s.target.emoji);
+    setText($("instruction"), s.mode === "zen" ? `Catch ${s.target.emoji}. Take your time.` : `Catch ${s.target.emoji}. Avoid the others.`);
+    setText($("wave-label"), s.mode === "zen" ? "Zen · just for joy" : `Wave ${s.wave + 1} / 6`);
+    setText($("wave-goal"), s.mode === "zen" ? "Every catch counts" : s.waveAwarded ? "Goal complete! +500" : `Goal: ${s.waveCatches} / ${PiniGame.WAVES[s.wave].goal} · +500`);
+    setText($("combo"), `${s.combo} combo · ×${PiniGame.multiplier(s.combo)}`);
     $("combo").classList.toggle("hot", s.combo >= 10);
-    $("fever-label").textContent = s.feverTime ? `✦ Fever! ×2 · ${(s.feverTime / 1000).toFixed(1)}s` : `Fever ${s.feverCharge} / 20`;
+    setText($("fever-label"), s.feverTime ? `✦ Fever! ×2 · ${(s.feverTime / 1000).toFixed(1)}s` : `Fever ${s.feverCharge} / 20`);
     $("fever-meter").max = s.feverTime ? 8000 : 20;
     $("fever-meter").value = s.feverTime || s.feverCharge;
     $("fever-meter").setAttribute("aria-label", s.feverTime ? "Fever time remaining" : "Fever charge");
@@ -430,6 +509,7 @@
     if (!overlay.hidden && signature !== overlaySignature) {
       overlaySignature = signature;
       overlay.replaceChildren();
+      if (!still()) kick(overlay, "enter");
       if (s.phase === "paused") {
         overlay.append("Paused");
         const button = document.createElement("button");
@@ -456,11 +536,8 @@
     visuals = visuals.filter(visual => {
       visual.age += dt;
       if (visual.age >= visual.duration) { visual.node.remove(); return false; }
-      const progress = visual.age / visual.duration;
-      const still = game.state.stationary || motion.matches;
-      visual.node.style.left = `${visual.x + (still ? 0 : visual.dx * progress)}px`;
-      visual.node.style.top = `${visual.y + (still ? 0 : visual.dy * progress)}px`;
-      visual.node.style.opacity = 1 - progress;
+      // CSS animates movement; without motion the popup simply fades in place.
+      if ("fade" in visual.node.dataset) visual.node.style.opacity = 1 - visual.age / visual.duration;
       return true;
     });
   }
