@@ -1,6 +1,11 @@
 * { box-sizing: border-box; }
 :root { color-scheme: light; font-family: system-ui, sans-serif; color: #24203e; background: #fff5e9; }
-body { margin: 0; height: 100dvh; min-height: 480px; overflow: hidden; background: #fff5e9; transition: background-color .5s; }
+body { margin: 0; height: 100dvh; min-height: 480px; overflow: hidden; background: #fff5e9; isolation: isolate; }
+/* Wave colour changes fade this layer out over the new colour: opacity runs on the compositor,
+   where a background-color transition repainted the whole page each frame. */
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--page-from); opacity: 0; pointer-events: none; }
+body.page-fade::before { animation: page-fade .5s ease forwards; }
+@keyframes page-fade { from { opacity: 1; } to { opacity: 0; } }
 button, input { font: inherit; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
 button { min-height: 48px; cursor: pointer; border: 2px solid #24203e; border-radius: 16px; color: inherit; background: #fffaf2; font-weight: 750; touch-action: manipulation; }
