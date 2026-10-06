@@ -312,6 +312,10 @@
     hideTrophy();
     $("leaderboards").hidden = !Board.isValidCategory(category);
     if ($("leaderboards").hidden) return canSubmit;
+    // Each mode keeps its own boards, so name the mode to avoid reading a fresh board as a reset.
+    const modeName = category.endsWith("-stationary") ? "Stationary" : "Falling";
+    setText($("local-board-title"), `This browser · ${modeName}`);
+    setText($("global-board-title"), `Global · ${modeName}`);
     renderLocalBoard(category);
     loadGlobalBoard(category, token);
     return canSubmit;
