@@ -81,7 +81,8 @@ body.stationary #playfield::after { display: none; }
 body.paused *, body.paused *::before, body.paused *::after { animation-play-state: paused !important; }
 body.paused #audio-glow { visibility: hidden; }
 /* Overlays and toasts animate in while the simulation is held. */
-body.paused .announcement.enter, body.paused .announcement.enter > *, body.paused #wordmark.enter, body.paused .feedback.pop { animation-play-state: running !important; }
+body.paused .announcement.enter, body.paused .announcement.enter > *, body.paused #wordmark.enter, body.paused .feedback.pop,
+body.paused .results-screen h2, body.paused .trophy { animation-play-state: running !important; }
 .results-screen h2 { font: clamp(70px, 15vw, 120px) 'Bangers', Impact, sans-serif; margin: 10px 0; }
 .results-screen > p { margin: 0 0 24px; }
 .results-stats { width: min(100%, 400px); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0; }
@@ -97,6 +98,16 @@ body.paused .announcement.enter, body.paused .announcement.enter > *, body.pause
 .score-form-status:empty { display: none; }
 .results-screen > .score-form-status { margin: 0 0 20px; font-weight: 700; }
 .results-screen.saved .hide-when-saved { display: none; }
+/* Global top three: a turning 3D trophy drawn by scripts/trophy.js. */
+.trophy { --glow: #ffd06e; position: relative; margin: -8px 0 16px; display: flex; flex-direction: column; align-items: center; }
+.trophy.silver { --glow: #cfd6e6; }
+.trophy.bronze { --glow: #e9a46a; }
+.trophy::before { content: ''; position: absolute; top: 4%; left: 50%; width: 92%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, var(--glow), transparent); opacity: .75; pointer-events: none; }
+.trophy canvas { position: relative; width: clamp(130px, 34vw, 180px); aspect-ratio: 9 / 10; }
+.trophy figcaption { position: relative; margin-top: 4px; font: 22px 'Bangers', Impact, sans-serif; letter-spacing: .04em; }
+.trophy:not([hidden]) { animation: word-in .6s cubic-bezier(.2, 1.5, .5, 1); }
+.trophy.flat canvas { display: none; }
+.trophy.flat figcaption::before { content: '🏆 '; }
 .score-form-status.error { color: #a52341; font-weight: 700; }
 .leaderboards { width: min(100%, 520px); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; text-align: left; }
 .leaderboards h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
