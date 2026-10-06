@@ -16,13 +16,19 @@
     let wordBag = [];
     let laneGap = .28;
     let hitZone = .2;
+    let overshoot = .18;
     function setPlayfieldHeight(height) {
       if (!Number.isFinite(height)) return;
       const runway = Math.max(1, height - 66);
-      laneGap = Math.min(1, Math.max(.28, 70 / runway));
+      // Uncapped: on short fields a lane waits until the previous tile has fallen a full tile height.
+      laneGap = Math.max(.28, 70 / runway);
       // Lane buttons only reach an emoji during its last 70px, where it touches them.
       hitZone = Math.min(1, 70 / runway);
+      // Emojis keep falling past the bottom and only leave once their 58px tile is fully off screen.
+      overshoot = 62 / runway;
     }
+    // Stationary tiles never move, so they expire at the end of their travel time.
+    const exitAge = object => object.travel * (s.stationary ? 1 : 1 + overshoot);
     function nextWord() {
       if (!wordBag.length) {
         wordBag = [...words];
@@ -135,7 +141,7 @@
       return true;
     }
     function catchable(lane) {
-      return s.objects.find(object => object.lane === lane && (s.stationary || object.age >= object.travel * (1 - hitZone)));
+      return s.objects.find(object => object.lane === lane && object.age < exitAge(object) && (s.stationary || object.age >= object.travel * (1 - hitZone)));
     }
     function catchLane(lane) {
       const object = catchable(lane);
@@ -185,7 +191,7 @@
       }
       for (const object of [...s.objects]) {
         object.age += used;
-        if (object.age >= object.travel) resolve(object.id, false);
+        if (object.age >= exitAge(object)) resolve(object.id, false);
       }
       s.spawnIn -= used;
       if (s.spawnIn <= 0) {
