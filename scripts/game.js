@@ -309,6 +309,7 @@
     $("score-form-status").textContent = "";
     $("score-form-error").textContent = "";
     $("results-screen").classList.remove("saved");
+    hideTrophy();
     $("leaderboards").hidden = !Board.isValidCategory(category);
     if ($("leaderboards").hidden) return canSubmit;
     renderLocalBoard(category);
@@ -355,11 +356,27 @@
       if (token !== resultToken) return;
       renderBoard($("global-board"), result.scores, item => item.id === result.id, "No global scores yet.");
       status.textContent = `${localText}, #${number(result.rank)} worldwide.`;
+      showTrophy(result.rank);
     } catch {
       if (token !== resultToken) return;
       status.textContent = `${localText}. The global board is unavailable right now.`;
     }
     announce(status.textContent);
+  }
+  function showTrophy(rank) {
+    const tier = Board.podiumTier(rank);
+    if (!tier) return;
+    const label = `${tier[0].toUpperCase()}${tier.slice(1)} trophy`;
+    const figure = $("trophy");
+    figure.className = `trophy ${tier}`;
+    $("trophy-caption").textContent = `${label} · #${rank} worldwide`;
+    $("trophy-canvas").setAttribute("aria-label", `${label} for finishing #${rank} on the global board`);
+    figure.hidden = false;
+    if (!PiniTrophy.show($("trophy-canvas"), tier, motion.matches)) figure.classList.add("flat");
+  }
+  function hideTrophy() {
+    PiniTrophy.stop();
+    $("trophy").hidden = true;
   }
   function showResults(reason) {
     if (savedResult) return;

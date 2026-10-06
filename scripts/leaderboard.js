@@ -23,7 +23,11 @@
     return { board: board.slice(0, BOARD_SIZE), rank: rank <= BOARD_SIZE ? rank : null };
   }
 
-  const api = { NAME_MAX_LENGTH, NAME_PATTERN, BOARD_SIZE, CATEGORIES, MAX_SCORE, cleanName, isValidName, isValidScore, isValidCategory, isValidEntry, addEntry };
+  // Global ranks 1–3 earn a trophy on the results screen.
+  const PODIUM = ["gold", "silver", "bronze"];
+  const podiumTier = rank => (Number.isInteger(rank) && PODIUM[rank - 1]) || null;
+
+  const api = { podiumTier, NAME_MAX_LENGTH, NAME_PATTERN, BOARD_SIZE, CATEGORIES, MAX_SCORE, cleanName, isValidName, isValidScore, isValidCategory, isValidEntry, addEntry };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.PiniLeaderboard = api;
 })(typeof window !== "undefined" ? window : globalThis);
