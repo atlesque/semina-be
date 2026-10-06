@@ -1,12 +1,13 @@
 (function (root) {
   "use strict";
+  // Fast falls with wide gaps: roughly two or three emojis on screen at once.
   const WAVES = [
-    { interval: 1000, travel: 5000, target: .85, bomb: 0, goal: 8 },
-    { interval: 910, travel: 4600, target: .82, bomb: 0, goal: 9 },
-    { interval: 760, travel: 3800, target: .78, bomb: .06, goal: 10 },
-    { interval: 580, travel: 2800, target: .75, bomb: .08, goal: 11 },
-    { interval: 440, travel: 2100, target: .72, bomb: .10, goal: 12 },
-    { interval: 320, travel: 1500, target: .70, bomb: .12, goal: 13 },
+    { interval: 1300, travel: 3400, target: .85, bomb: 0, goal: 8 },
+    { interval: 1200, travel: 3100, target: .82, bomb: 0, goal: 8 },
+    { interval: 1050, travel: 2700, target: .78, bomb: .06, goal: 9 },
+    { interval: 900, travel: 2200, target: .75, bomb: .08, goal: 10 },
+    { interval: 760, travel: 1800, target: .72, bomb: .10, goal: 11 },
+    { interval: 640, travel: 1400, target: .70, bomb: .12, goal: 13 },
   ];
   const multiplier = combo => combo >= 20 ? 4 : combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
 
