@@ -467,7 +467,6 @@
     for (const [lane, button] of lanes.entries()) {
       const object = game.catchable(lane);
       if (object) ready.add(object.id);
-      button.classList.toggle("ready", Boolean(object));
       setText(button.querySelector(".lane-emoji"), object?.emoji || "—");
       const label = `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`;
       if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
@@ -582,13 +581,21 @@
     else $("menu-button").focus();
     render();
   });
-  for (const button of lanes) button.addEventListener("click", () => { game.catchLane(Number(button.dataset.lane)); render(); });
+  // Lanes only light up when pressed: a bright flash on a catch, a dull one on an empty hit zone.
+  function pressLane(lane) {
+    if (game.state.phase !== "playing") return;
+    const button = lanes[lane];
+    button.classList.remove("hit", "miss");
+    kick(button, game.catchable(lane) ? "hit" : "miss");
+    game.catchLane(lane);
+    render();
+  }
+  for (const button of lanes) button.addEventListener("click", () => pressLane(Number(button.dataset.lane)));
   document.addEventListener("keydown", event => {
     if (menu.open || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
     if (["1", "2", "3", "4"].includes(event.key) && !event.repeat && game.state.phase === "playing") {
       event.preventDefault();
-      game.catchLane(Number(event.key) - 1);
-      render();
+      pressLane(Number(event.key) - 1);
     } else if ((event.key === "Escape" || event.key.toLowerCase() === "p") && ["playing", "wave", "resume", "paused"].includes(game.state.phase)) openMenu();
   });
   document.addEventListener("visibilitychange", () => {
