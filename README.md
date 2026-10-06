@@ -30,6 +30,9 @@ side on the results screen, separately for falling and stationary play:
 - **Global**: stored in Cloudflare D1 through the Pages Function `functions/api/scores.js`
   (`GET /api/scores?category=arcade-falling`, `POST /api/scores` with `{ name, score, category }`).
 
+A score that lands #1, #2 or #3 on the global board shows a gold, silver or bronze trophy,
+drawn in plain WebGL by `scripts/trophy.js` (one still frame when the browser prefers reduced motion).
+
 If the API or database is unavailable, the local board still works and the global board says so.
 Scores are reported by the browser, so treat the global board as a friendly board rather than a
 cheat-proof one; the server only rejects malformed names, categories and implausible scores.
