@@ -1,0 +1,13 @@
+{
+  "title": "Pini Arcade Theme",
+  "job_id": "20261006-112057-f11ffa",
+  "model": "YuE2-3B",
+  "instrumental": true,
+  "duration_actual": 114.959,
+  "seed": 425075311,
+  "audio": "audio/pini-arcade-theme.mp3",
+  "edit": "32-second loop cut from 49.02 s on the phrase boundary, 10 ms crossfade, -2 dB",
+  "wav_path": "D:\\Atlesque Media VOF Dropbox\\Alexander Van Maele\\AI Render Node\\music\\2026-10-06\\20261006-112057-f11ffa\\20261006-112057-f11ffa.wav",
+  "metadata_path": "D:\\Atlesque Media VOF Dropbox\\Alexander Van Maele\\AI Render Node\\music\\2026-10-06\\20261006-112057-f11ffa\\20261006-112057-f11ffa.json",
+  "loop_seconds": 32
+}

@@ -48,11 +48,14 @@
   });
   const player = PiniAudioPlayer.createAudioPlayerController({
     audioElement: audio, playerElement: $("audio-player"), visualizer,
+    backgroundTrack: { title: "Pini Arcade Theme", src: "audio/pini-arcade-theme.mp3" },
     tracks: [
       { title: "Pini — Metal Spark", src: "audio/pini-metal.mp3" },
       { title: "Semina — MBP Melody", src: "audio/semina-mbp-melody.mp3" },
       { title: "Get Well Soon", src: "audio/20260916-142727-77c9dd-web-small.mp3" },
       { title: "Pini Macedonini", src: "audio/pini-background.mp3" },
+      { title: "Pini Arcade — Lounge", src: "audio/pini-arcade-lounge.mp3" },
+      { title: "Pini Arcade — Attract Mode", src: "audio/pini-arcade-attract.mp3" },
     ],
     playlistElement: $("playlist-menu"), isEnabled: () => musicEnabled,
   });
@@ -234,7 +237,7 @@
     updateRecordKey();
   }
   function start() {
-    player.startBackgroundMusic();
+    player.playPlaylist();
     document.body.classList.remove("home-screen");
     if (game.state.mode === "zen" && game.state.target) rememberBest();
     if (menu.open) menu.close();
@@ -396,6 +399,7 @@
     requestAnimationFrame(tick);
   }
   function home() {
+    player.playBackgroundTheme();
     document.body.classList.add("home-screen");
     // Zen has no end condition; retain its record when leaving a session.
     if (game.state.mode === "zen" && game.state.target) rememberBest();
