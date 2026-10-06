@@ -80,6 +80,10 @@ function createAudioVisualizer({
   let glowVisibility = 0;
   let targetGlowVisibility = 0;
   let lastFrameTime = 0;
+  // Measured from ResizeObserver callbacks, which run right after layout. Reading the
+  // rect in every animation frame forced a synchronous layout whenever the game had
+  // just changed the DOM.
+  let textBounds = targetElement.getBoundingClientRect();
   let lastLoudnessTime = 0;
   let loudnessEnergy = 0;
   let lufs = -Infinity;
@@ -238,7 +242,6 @@ function createAudioVisualizer({
       hslToRgb((baseHue + 240) % 360, 100, 58),
     ].map((color) => mixWithWhite(color, 1 - colorfulness));
     const glowAlpha = (0.52 + intensity * 0.48) * lufsGate;
-    const textBounds = targetElement.getBoundingClientRect();
     const textCenterX = ((textBounds.left + textBounds.right) / 2) * renderScale;
     const textCenterY = ((textBounds.top + textBounds.bottom) / 2) * renderScale;
     const radius =
@@ -404,6 +407,12 @@ function createAudioVisualizer({
 
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
+  const measureTarget = () => {
+    textBounds = targetElement.getBoundingClientRect();
+  };
+  const boundsObserver = new ResizeObserver(measureTarget);
+  boundsObserver.observe(targetElement);
+  boundsObserver.observe(document.documentElement);
   audioElement.addEventListener("playing", handlePlaying);
   audioElement.addEventListener("pause", handleStopped);
   audioElement.addEventListener("ended", handleStopped);

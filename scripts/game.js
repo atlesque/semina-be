@@ -8,7 +8,12 @@
   const audio = $("background-music");
   const menu = $("game-menu");
   const lanes = [...document.querySelectorAll("[data-lane]")];
+  const laneEmojis = lanes.map(button => button.querySelector(".lane-emoji"));
   const objectNodes = new Map();
+  // Last offset and transform written for each object node, so effects can be placed without
+  // measuring and unchanged transforms are not rewritten.
+  const nodeY = new WeakMap();
+  const nodeTransform = new WeakMap();
   const textCache = new WeakMap();
   let mode = "arcade";
   let records = {};
@@ -17,7 +22,11 @@
   let musicEnabled = true;
   let audioContext;
   let lastFrame = null;
+  // Playfield size from ResizeObserver; reading clientHeight every frame forced a synchronous layout.
+  let fieldWidth = 0;
+  let fieldHeight = 0;
   let feedbackTime = 0;
+  let pageColor = "#fff5e9";
   let visuals = [];
   let savedResult = false;
   let recordKey = "arcade-falling";
@@ -114,11 +123,18 @@
     textCache.set(node, text);
     node.textContent = text;
   }
+  function setAttr(node, name, value) {
+    if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+  }
+  function setHidden(node, hidden) {
+    if (node.hidden !== hidden) node.hidden = hidden;
+  }
   const still = () => game.state.stationary || motion.matches;
-  // Restarts a one-shot CSS animation class.
+  // Restarts a one-shot CSS animation class. Flushing style (not offsetWidth) restarts it
+  // without forcing a full layout on every catch.
   function kick(node, className) {
     node.classList.remove(className);
-    void node.offsetWidth;
+    void getComputedStyle(node).animationName;
     node.classList.add(className);
   }
   function buzz(pattern) {
@@ -156,10 +172,10 @@
     return node;
   }
   function catchEffect(object, points) {
-    const bounds = objectNodes.get(object.id)?.getBoundingClientRect();
-    const fieldBounds = field.getBoundingClientRect();
-    const x = bounds ? bounds.left + bounds.width / 2 - fieldBounds.left : field.clientWidth * (object.lane + .5) / 4;
-    const y = bounds ? bounds.top + bounds.height / 2 - fieldBounds.top : field.clientHeight / 2;
+    // Objects sit at their lane centre; their last rendered offset gives the height without measuring.
+    const top = nodeY.get(objectNodes.get(object.id));
+    const x = fieldWidth * (object.lane + .5) / 4;
+    const y = top === undefined ? fieldHeight / 2 : top + 29;
     const fever = game.state.feverTime > 0;
     const tier = PiniGame.multiplier(game.state.combo);
     const popup = addVisual(`points${fever ? " fever" : tier > 1 ? ` x${tier}` : ""}`, x, Math.max(24, y), 750, `+${points}`);
@@ -182,6 +198,14 @@
     if (!still()) kick($("game-screen"), "shake");
     buzz(60);
   }
+  // Fades out the previous colour on its own layer. Transitioning the body background instead
+  // repainted the whole screen on every frame of a wave start.
+  function setPageColor(color) {
+    if (color === pageColor) return;
+    document.body.style.setProperty("--page-from", pageColor);
+    document.body.style.backgroundColor = pageColor = color;
+    kick(document.body, "page-fade");
+  }
   // Each wave quickens the lane streaks a little.
   function setTempo() {
     const s = game.state;
@@ -192,7 +216,7 @@
     switch (event.type) {
       case "wave":
         clearVisuals();
-        document.body.style.backgroundColor = palettes[game.state.wave];
+        setPageColor(palettes[game.state.wave]);
         setTempo();
         announce(game.state.mode === "zen" ? `Zen mode. Catch ${event.target.word}, ${event.target.emoji}. Every catch counts.` : `Wave ${event.wave}. Catch ${event.target.word}, ${event.target.emoji}. Avoid the others.`);
         break;
@@ -207,9 +231,7 @@
       case "milestone":
         feedback(`×${event.multiplier} multiplier!`);
         announce(`Combo multiplier ${event.multiplier}.`);
-        $("combo").classList.remove("pulse");
-        void $("combo").offsetWidth;
-        $("combo").classList.add("pulse");
+        kick($("combo"), "pulse");
         tone(1040, .2);
         break;
       case "damage": feedback("Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); damageEffect(); tone(160, .18); break;
@@ -250,7 +272,7 @@
     document.body.classList.toggle("stationary", $("stationary").checked);
     lastFrame = null;
     game.start(mode, $("stationary").checked);
-    game.setPlayfieldHeight(field.clientHeight);
+    measureField();
     if (document.hidden) game.pause();
     lanes[0].focus({ preventScroll: true });
     render();
@@ -432,7 +454,7 @@
     $("title-screen").hidden = false;
     $("game-screen").hidden = true;
     $("results-screen").hidden = true;
-    document.body.style.backgroundColor = "#fff5e9";
+    setPageColor("#fff5e9");
     document.body.classList.remove("fever", "paused", "stationary");
     selectMode(mode);
     setText($("score"), "0");
@@ -451,7 +473,7 @@
   function renderObjects() {
     const s = game.state;
     const ids = new Set(s.objects.map(object => object.id));
-    const height = field.clientHeight;
+    const height = fieldHeight;
     const sway = !still();
     for (const [id, node] of objectNodes) {
       if (!ids.has(id)) { node.remove(); objectNodes.delete(id); }
@@ -476,23 +498,27 @@
           game.resolve(object.id, true);
           render();
         });
+        node.style.left = `${(object.lane + .5) * 25}%`;
         objectNodes.set(object.id, node);
         field.append(node);
       }
-      node.style.left = `${(object.lane + .5) * 25}%`;
       // Transforms keep falling objects on the compositor instead of re-running layout each frame.
       const y = s.stationary ? Math.max(8, (height - 58) / 2) : 4 + object.age / object.travel * Math.max(0, height - 66);
       const tilt = sway ? Math.sin(object.age / 260 + object.id) * 7 : 0;
-      node.style.transform = `translate3d(-50%, ${y.toFixed(1)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
-      node.disabled = s.phase !== "playing";
+      nodeY.set(node, y);
+      const transform = `translate3d(-50%, ${y.toFixed(1)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
+      if (nodeTransform.get(node) !== transform) {
+        nodeTransform.set(node, transform);
+        node.style.transform = transform;
+      }
+      if (node.disabled !== (s.phase !== "playing")) node.disabled = s.phase !== "playing";
     }
     const ready = new Set();
     for (const [lane, button] of lanes.entries()) {
       const object = game.catchable(lane);
       if (object) ready.add(object.id);
-      setText(button.querySelector(".lane-emoji"), object?.emoji || "—");
-      const label = `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`;
-      if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
+      setText(laneEmojis[lane], object?.emoji || "—");
+      setAttr(button, "aria-label", `Catch lane ${lane + 1}: ${object?.emoji || "empty"}${object?.kind === "bomb" ? ", bomb, avoid" : ""}`);
     }
     for (const [id, node] of objectNodes) node.classList.toggle("in-zone", ready.has(id));
   }
@@ -509,7 +535,7 @@
     $("timer").parentElement.classList.toggle("urgent", s.mode === "arcade" && s.phase === "playing" && secondsLeft <= 10);
     $("hearts").parentElement.classList.toggle("critical", s.mode === "arcade" && s.hearts === 1);
     setText($("hearts"), s.mode === "zen" ? "—" : "♥ ".repeat(s.hearts).trim() || "♡ ♡ ♡");
-    $("hearts").setAttribute("aria-label", s.mode === "zen" ? "Unlimited lives" : `${s.hearts} hearts`);
+    setAttr($("hearts"), "aria-label", s.mode === "zen" ? "Unlimited lives" : `${s.hearts} hearts`);
     document.body.classList.toggle("fever", s.feverTime > 0 && !["title", "results"].includes(s.phase));
     document.body.classList.toggle("paused", s.phase !== "playing");
     if (!s.target) return;
@@ -523,14 +549,15 @@
     setText($("combo"), `${s.combo} combo · ×${PiniGame.multiplier(s.combo)}`);
     $("combo").classList.toggle("hot", s.combo >= 10);
     setText($("fever-label"), s.feverTime ? `✦ Fever! ×2 · ${(s.feverTime / 1000).toFixed(1)}s` : `Fever ${s.feverCharge} / 20`);
-    $("fever-meter").max = s.feverTime ? 8000 : 20;
-    $("fever-meter").value = s.feverTime || s.feverCharge;
-    $("fever-meter").setAttribute("aria-label", s.feverTime ? "Fever time remaining" : "Fever charge");
-    $("combo").hidden = s.mode === "zen";
-    $("fever-label").hidden = s.mode === "zen";
-    $("fever-meter").hidden = s.mode === "zen";
+    const meter = $("fever-meter");
+    if (meter.max !== (s.feverTime ? 8000 : 20)) meter.max = s.feverTime ? 8000 : 20;
+    if (meter.value !== (s.feverTime || s.feverCharge)) meter.value = s.feverTime || s.feverCharge;
+    setAttr(meter, "aria-label", s.feverTime ? "Fever time remaining" : "Fever charge");
+    setHidden($("combo"), s.mode === "zen");
+    setHidden($("fever-label"), s.mode === "zen");
+    setHidden(meter, s.mode === "zen");
     const overlay = $("announcement");
-    overlay.hidden = !["wave", "resume", "paused"].includes(s.phase) || menu.open;
+    setHidden(overlay, !["wave", "resume", "paused"].includes(s.phase) || menu.open);
     const signature = `${s.phase}-${s.wave}-${s.target.emoji}-${Math.ceil((s.resumeTime || 0) / 1000)}`;
     if (!overlay.hidden && signature !== overlaySignature) {
       overlaySignature = signature;
@@ -558,7 +585,7 @@
   function animateVisuals(dt) {
     if (game.state.phase !== "playing") return;
     feedbackTime = Math.max(0, feedbackTime - dt);
-    $("feedback").hidden = !feedbackTime;
+    setHidden($("feedback"), !feedbackTime);
     visuals = visuals.filter(visual => {
       visual.age += dt;
       if (visual.age >= visual.duration) { visual.node.remove(); return false; }
@@ -641,6 +668,12 @@
     }
   });
   updateRecordKey();
-  new ResizeObserver(() => game.setPlayfieldHeight(field.clientHeight)).observe(field);
+  function measureField() {
+    fieldWidth = field.clientWidth;
+    fieldHeight = field.clientHeight;
+    game.setPlayfieldHeight(fieldHeight);
+  }
+  // Observer callbacks run after layout, so measuring here is free.
+  new ResizeObserver(measureField).observe(field);
   requestAnimationFrame(frame);
 })();
