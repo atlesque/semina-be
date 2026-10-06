@@ -113,6 +113,36 @@ test('lane buttons only catch emojis touching the bottom of the playfield', () =
   assert.equal(game.catchLane(0), true);
   assert.equal(game.state.correct, 1);
 });
+test('emojis pass through the bottom and stay catchable until fully off screen', () => {
+  const { game } = setup();
+  game.setPlayfieldHeight(416);
+  // Runway is 350px, so a 5000ms fall leaves the screen 62px (about 886ms) after reaching the bottom.
+  const item = object(game, 'target', { age: 4990 });
+  game.advance(500);
+  assert.ok(game.state.objects.includes(item));
+  assert.equal(game.catchLane(0), true);
+  assert.equal(game.state.correct, 1);
+});
+test('emojis that leave the screen uncaught count as an escape', () => {
+  const { game } = setup();
+  game.setPlayfieldHeight(416);
+  catchTarget(game);
+  const item = object(game, 'target', { age: 5800 });
+  game.advance(50);
+  assert.ok(game.state.objects.includes(item));
+  assert.equal(game.state.combo, 1);
+  game.advance(50);
+  assert.ok(!game.state.objects.includes(item));
+  assert.equal(game.catchLane(0), false);
+  assert.equal(game.state.combo, 0);
+  assert.equal(game.state.hearts, 3);
+});
+test('stationary emojis still expire at the end of their travel time', () => {
+  const { game } = setup('arcade', true);
+  const item = object(game, 'target', { age: 4990 });
+  game.advance(50);
+  assert.ok(!game.state.objects.includes(item));
+});
 test('stationary lane buttons catch regardless of fall progress', () => {
   const { game } = setup('arcade', true);
   object(game);
@@ -245,8 +275,8 @@ test('spawn composition introduces bombs in wave 3 and enforces density limits',
     }
     assert.ok(bombs > 0);
   }
-  assert.equal(WAVES[0].interval, 1000);
-  assert.equal(WAVES[5].travel, 1500);
+  assert.equal(WAVES[0].interval, 1300);
+  assert.equal(WAVES[5].travel, 1400);
 });
 test('Zen remains untimed, harmless, one point per catch, changing only on a current target', () => {
   const { game } = setup('zen', true);
@@ -267,7 +297,11 @@ test('short playfields reduce lane density to prevent overlapping touch targets'
   game.setPlayfieldHeight(100);
   for (let i = 0; i < 200; i++) {
     game.advance(50);
-    for (const lane of [0, 1, 2, 3]) assert.ok(game.state.objects.filter(o => o.lane === lane).length <= 1);
+    for (const lane of [0, 1, 2, 3]) {
+      // Tiles are 58px and fall along a 34px runway; same-lane tiles must never overlap.
+      const tops = game.state.objects.filter(o => o.lane === lane).map(o => 4 + o.age / o.travel * 34).sort((x, y) => x - y);
+      for (let j = 1; j < tops.length; j++) assert.ok(tops[j] - tops[j - 1] >= 58);
+    }
   }
 });
 test('identical input traces produce identical results regardless of frame batching', () => {

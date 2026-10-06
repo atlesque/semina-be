@@ -13,6 +13,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .brand span { color: #e8556c; padding-left: 3px; }
 .stat small { display: block; font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
 .home-screen .run-stat { display: none; }
+.results-open .timer-stat { display: none; }
 .stat strong { display: block; margin-top: 4px; font-size: 26px; font-variant-numeric: tabular-nums; }
 .hearts strong { color: #ca3255; font-size: 22px; }
 .icon-button { width: 48px; flex-shrink: 0; font-size: 23px; }
@@ -64,7 +65,6 @@ progress::-moz-progress-bar { background: #ae366f; }
 .fever #wordmark { color: #a32251; text-shadow: 2px 2px #ffd06e; }
 .catch-controls { display: flex; gap: 12px; padding: 12px 16px max(16px, env(safe-area-inset-bottom)); flex-shrink: 0; }
 .catch-controls button { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 10px; height: 58px; background: #fffaf2cc; }
-.catch-controls button.ready { background: #ffd06e; border-color: #24203e; transform: translateY(-2px); box-shadow: 0 4px 0 #24203e33; }
 .lane-emoji { font-size: 27px; }
 /* Lane buttons reach an emoji once its bottom edge enters this strip. */
 #playfield::after { content: ''; position: absolute; inset: auto 0 0; height: 74px; border-top: 2px dashed #24203e2e; background: linear-gradient(transparent, #ffd06e40); pointer-events: none; }
@@ -247,11 +247,18 @@ body.stationary .field-streaks { display: none; }
 .fever #fever-meter { animation: meter .6s ease-in-out infinite alternate; }
 @keyframes meter { to { opacity: .65; } }
 
-/* Ready lanes glow; the clock and last heart warn without words. */
+/* Lanes light up only on hover or press: a bright flash on a catch, a dull one on an empty hit zone. */
 .catch-controls button { position: relative; }
+.catch-controls button:hover { background: #ffe4b6; }
+@media (hover: none) { .catch-controls button:hover { background: #fffaf2cc; } }
+.catch-controls button:active { background: #ffd06e; transform: translateY(1px); }
 .catch-controls button::after { content: ''; position: absolute; inset: -4px; border-radius: 18px; box-shadow: 0 0 0 3px #ffd06e, 0 0 16px #ffd06e; opacity: 0; pointer-events: none; }
-.catch-controls button.ready::after { animation: ready .7s ease-in-out infinite alternate; }
-@keyframes ready { from { opacity: .2; } to { opacity: .8; } }
+.catch-controls button.hit { animation: lane-hit .28s ease-out; }
+.catch-controls button.hit::after { animation: lane-glow .28s ease-out; }
+.catch-controls button.miss { animation: lane-miss .3s ease-out; }
+@keyframes lane-hit { from { background: #ffd06e; transform: translateY(1px); } }
+@keyframes lane-glow { from { opacity: 1; } to { opacity: 0; } }
+@keyframes lane-miss { from { background: #c9c4bd; border-color: #24203e88; color: #24203e88; transform: translateY(1px); } }
 .stat.urgent strong { color: #ca3255; animation: tick 1s ease-in-out infinite; }
 @keyframes tick { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } }
 .hearts.critical strong { animation: heartbeat 1.1s ease-in-out infinite; }
@@ -272,10 +279,9 @@ body.stationary .field-streaks { display: none; }
 .results-screen:not([hidden]) h2 { animation: word-in .5s cubic-bezier(.2, 1.5, .5, 1); }
 
 body.stationary .points { animation: none; }
-body.stationary .catch-controls button.ready::after { animation: none; opacity: .6; }
 body.stationary #game-screen.shake, body.stationary #target-emoji { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .field-streaks { display: none; }
-  .catch-controls button.ready::after, .fever .field-aura { opacity: .6; }
+  .fever .field-aura { opacity: .6; }
   #play::after, #retry::after { display: none; }
 }

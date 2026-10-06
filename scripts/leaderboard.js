@@ -5,7 +5,7 @@
   const BOARD_SIZE = 10;
   // Only Arcade runs end with a result; Zen has no finish to submit.
   const CATEGORIES = ["arcade-falling", "arcade-stationary"];
-  // 281 spawns in 90 s at 800 points (×4 combo, ×2 Fever) plus six wave bonuses stays under this.
+  // At most 101 spawns in 90 s at 800 points (×4 combo, ×2 Fever) plus six wave bonuses stays far under this.
   const MAX_SCORE = 300000;
 
   // Used while typing: drops anything that is not a letter or digit.
