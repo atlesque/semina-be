@@ -238,7 +238,7 @@
   }
   function start() {
     player.playPlaylist();
-    document.body.classList.remove("home-screen");
+    document.body.classList.remove("home-screen", "results-open");
     if (game.state.mode === "zen" && game.state.target) rememberBest();
     if (menu.open) menu.close();
     clearVisuals();
@@ -369,6 +369,7 @@
     const isBest = rememberBest();
     $("game-screen").hidden = true;
     $("results-screen").hidden = false;
+    document.body.classList.add("results-open");
     $("result-title").textContent = reason === "hearts" ? "Out of hearts. Another try?" : "90 seconds. Nicely caught!";
     $("personal-best").textContent = `${isBest ? "✦ New personal best!" : "Personal best:"} ${number(records[recordKey] || 0)}`;
     $("result-combo").textContent = s.bestCombo;
@@ -401,6 +402,7 @@
   function home() {
     player.playBackgroundTheme();
     document.body.classList.add("home-screen");
+    document.body.classList.remove("results-open");
     // Zen has no end condition; retain its record when leaving a session.
     if (game.state.mode === "zen" && game.state.target) rememberBest();
     game.reset(mode, $("stationary").checked);
