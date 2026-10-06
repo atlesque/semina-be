@@ -89,7 +89,10 @@
     $("sound-toggle").setAttribute("aria-label", muted ? "Unmute sound" : "Mute sound");
   }
 
-  function tone(frequency = 520, duration = .08) {
+  // Maps a playfield lane (0–3) to a stereo position, kept short of hard left/right.
+  const lanePan = object => object ? ((object.lane + .5) / 4 * 2 - 1) * .9 : 0;
+  // pan runs from -1 (left) to 1 (right); global events stay centred.
+  function tone(frequency = 520, duration = .08, pan = 0) {
     if (!effectsEnabled) return;
     try {
       audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -97,7 +100,14 @@
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
       oscillator.connect(gain);
-      gain.connect(audioContext.destination);
+      if (pan && audioContext.createStereoPanner) {
+        const panner = audioContext.createStereoPanner();
+        panner.pan.value = Math.max(-1, Math.min(1, pan));
+        gain.connect(panner);
+        panner.connect(audioContext.destination);
+      } else {
+        gain.connect(audioContext.destination);
+      }
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(.05, audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + duration);
@@ -198,7 +208,7 @@
         catchEffect(event.object, event.points);
         kick($("score"), "bump");
         if (game.state.mode !== "zen") kick($("combo"), "bump");
-        tone(520 + Math.min(game.state.combo, 20) * 18);
+        tone(520 + Math.min(game.state.combo, 20) * 18, .08, lanePan(event.object));
         break;
       case "combo-break": feedback("Combo broken — keep going!"); kick($("combo"), "dropped"); break;
       case "milestone":
@@ -209,7 +219,7 @@
         $("combo").classList.add("pulse");
         tone(1040, .2);
         break;
-      case "damage": feedback("Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); damageEffect(); tone(160, .18); break;
+      case "damage": feedback("Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); damageEffect(); tone(160, .18, lanePan(event.object)); break;
       case "fever":
         feedback("FEVER! Double points ✦");
         announce("Fever! Double points for eight seconds.");
