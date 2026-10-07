@@ -559,9 +559,11 @@
     setHidden(overlay, !["wave", "resume", "paused"].includes(s.phase) || menu.open);
     const signature = `${s.phase}-${s.wave}-${s.target.emoji}-${Math.ceil((s.resumeTime || 0) / 1000)}`;
     if (!overlay.hidden && signature !== overlaySignature) {
+      // Countdown ticks only swap the number; replaying the entrance would flash the backdrop.
+      const ticking = s.phase === "resume" && overlaySignature.startsWith("resume-");
       overlaySignature = signature;
       overlay.replaceChildren();
-      if (!still()) kick(overlay, "enter");
+      if (!still() && !ticking) kick(overlay, "enter");
       if (s.phase === "paused") {
         overlay.append("Paused");
         const button = document.createElement("button");
