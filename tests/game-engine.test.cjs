@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createGame, multiplier, WAVES } = require('../scripts/game-engine.js');
+const { createGame, multiplier, waveTuning, WAVES, CEILING } = require('../scripts/game-engine.js');
 const words = [{ word: 'Apple', emoji: '🍎' }, { word: 'Planet', emoji: '🪐' }, { word: 'Pizza', emoji: '🍕' }];
 function setup(mode = 'arcade', stationary = false) {
   const events = [];
@@ -197,14 +197,27 @@ test('wave boundary clears objects without escape penalties and preserves combos
   catchTarget(game);
   assert.equal(game.state.target, target);
 });
-test('six waves total exactly 90 seconds of active play', () => {
+test('waves never run out: an untouched run keeps going past wave 6', () => {
   const { game } = setup();
-  game.advance(90000 + 5 * 1400);
-  assert.equal(game.state.phase, 'results');
-  assert.equal(game.state.elapsed, 90000);
-  assert.equal(game.state.wavesCompleted, 6);
+  game.advance(20 * (15000 + 1400));
+  assert.notEqual(game.state.phase, 'results');
+  assert.equal(game.state.wavesCompleted, 20);
+  assert.equal(game.state.wave, 20);
+  assert.equal(game.state.elapsed, 300000);
   assert.equal(game.state.hearts, 3);
-  assert.equal(game.state.objects.length, 0);
+});
+test('waves past 6 ramp toward the ceiling and then hold', () => {
+  for (let i = 0; i < WAVES.length; i++) assert.equal(waveTuning(i), WAVES[i]);
+  let previous = WAVES.at(-1);
+  for (let i = WAVES.length; i < WAVES.length + 6; i++) {
+    const tuning = waveTuning(i);
+    assert.ok(tuning.interval < previous.interval && tuning.travel < previous.travel, `wave ${i + 1}`);
+    assert.ok(tuning.bomb > previous.bomb && tuning.target < previous.target, `wave ${i + 1}`);
+    assert.ok(tuning.goal >= previous.goal);
+    previous = tuning;
+  }
+  assert.deepEqual(waveTuning(11), CEILING);
+  assert.deepEqual(waveTuning(500), CEILING);
 });
 test('third damaging catch ends the run, further interaction has no effect', () => {
   const { game, events } = setup();
@@ -241,12 +254,12 @@ test('stationary and falling runs can both be completed by catch controls', () =
   for (const stationary of [false, true]) {
     const { game } = setup('arcade', stationary);
     let maxObjects = 0;
-    while (game.state.phase !== 'results') {
+    while (game.state.wavesCompleted < 14) {
       game.advance(50);
       maxObjects = Math.max(maxObjects, game.state.objects.length);
       for (const item of [...game.state.objects]) if (item.kind === 'target') game.catchLane(item.lane);
     }
-    assert.equal(game.state.wavesCompleted, 6);
+    assert.notEqual(game.state.phase, 'results');
     assert.equal(game.state.hearts, 3);
     assert.ok(game.state.score > 10000);
     assert.ok(maxObjects <= (stationary ? 4 : 8));
@@ -260,7 +273,7 @@ test('spawn composition introduces bombs in wave 3 and enforces density limits',
     game.start('arcade', stationary);
     let bombs = 0;
     const seen = new Set();
-    while (game.state.phase !== 'results') {
+    while (game.state.wavesCompleted < 14) {
       game.advance(50);
       assert.ok(game.state.objects.length <= (stationary ? 4 : 8));
       if (stationary) for (const lane of [0, 1, 2, 3]) assert.ok(game.state.objects.filter(o => o.lane === lane).length <= 1);

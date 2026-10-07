@@ -9,6 +9,18 @@
     { interval: 760, travel: 1800, target: .72, bomb: .10, goal: 11 },
     { interval: 640, travel: 1400, target: .70, bomb: .12, goal: 13 },
   ];
+  // Past the last defined wave, waves keep coming: over six more waves they ramp from wave 6
+  // to a fixed ceiling, then hold there for as long as the hearts last.
+  const CEILING = { interval: 520, travel: 1200, target: .64, bomb: .18, goal: 14 };
+  const RAMP_WAVES = 6;
+  function waveTuning(wave) {
+    if (wave < WAVES.length) return WAVES[wave];
+    const last = WAVES.at(-1);
+    const t = Math.min(1, (wave - WAVES.length + 1) / RAMP_WAVES);
+    const lerp = key => last[key] + (CEILING[key] - last[key]) * t;
+    return { interval: Math.round(lerp("interval")), travel: Math.round(lerp("travel")),
+      target: +lerp("target").toFixed(3), bomb: +lerp("bomb").toFixed(3), goal: Math.round(lerp("goal")) };
+  }
   const multiplier = combo => combo >= 20 ? 4 : combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
 
   function createGame({ words, random = Math.random, emit = () => {} }) {
@@ -134,7 +146,7 @@
         s.feverTime = 8000;
         emit({ type: "fever" });
       }
-      if (!s.waveAwarded && s.waveCatches >= WAVES[s.wave].goal) {
+      if (!s.waveAwarded && s.waveCatches >= waveTuning(s.wave).goal) {
         s.waveAwarded = true;
         s.score += 500;
         emit({ type: "wave-clear", points: 500 });
@@ -149,7 +161,7 @@
       return object ? resolve(object.id, true) : false;
     }
     function spawn() {
-      const tuning = WAVES[s.wave];
+      const tuning = waveTuning(s.wave);
       const freeLanes = [0, 1, 2, 3].filter(lane => {
         const occupants = s.objects.filter(object => object.lane === lane);
         return s.stationary ? !occupants.length : occupants.length < 2 && occupants.every(object => object.age > object.travel * laneGap);
@@ -186,8 +198,8 @@
       // Clear at the boundary before resolving escapes: transitions never penalize.
       if (s.mode === "arcade" && s.waveTime >= 15000) {
         s.wavesCompleted++;
-        if (s.wave === 5) finish("time");
-        else { s.wave++; beginWave(); }
+        s.wave++;
+        beginWave();
         return used;
       }
       for (const object of [...s.objects]) {
@@ -197,7 +209,7 @@
       s.spawnIn -= used;
       if (s.spawnIn <= 0) {
         spawn();
-        s.spawnIn += s.mode === "zen" ? 850 : WAVES[s.wave].interval;
+        s.spawnIn += s.mode === "zen" ? 850 : waveTuning(s.wave).interval;
       }
       return used;
     }
@@ -208,7 +220,7 @@
     reset();
     return { get state() { return s; }, start, reset, pause, resume, resolve, catchable, catchLane, advance, setPlayfieldHeight };
   }
-  const api = { createGame, multiplier, WAVES };
+  const api = { createGame, multiplier, waveTuning, WAVES, CEILING };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.PiniGame = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -2,7 +2,7 @@
 // These rules mirror scripts/leaderboard.js; tests/scores-api.test.mjs keeps them in sync.
 export const NAME_PATTERN = /^[A-Za-z0-9]{1,12}$/;
 export const CATEGORIES = ["arcade-falling", "arcade-stationary"];
-export const MAX_SCORE = 300000;
+export const MAX_SCORE = 9999999;
 export const BOARD_SIZE = 10;
 const MAX_BODY_BYTES = 512;
 

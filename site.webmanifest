@@ -1,7 +1,7 @@
 {
   "name": "Pini Arcade",
   "short_name": "Pini",
-  "description": "A 90-second emoji arcade game. Catch, combo and go Fever!",
+  "description": "An endless emoji arcade game. Catch, combo and go Fever!",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fff5e9",
