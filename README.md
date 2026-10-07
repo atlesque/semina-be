@@ -57,6 +57,39 @@ The site deploys as a Cloudflare Pages project, which picks up the `functions/` 
 To run the API locally: `npx wrangler pages dev . --d1 DB=<database-name>` after applying the
 migration with `--local`.
 
+## Admin dashboard
+
+`admin.semina.be` opens a dashboard (`admin/index.html`) that shows both global boards (top 50 each,
+with a line under the top 10 players see) and can clear one board or both. It talks to
+`GET /api/admin/scores` and `DELETE /api/admin/scores?category=<arcade-falling|arcade-stationary|all>`.
+
+Cloudflare Access is the login, and the server checks it again: `functions/_shared/access.js`
+verifies the Access JWT (`Cf-Access-Jwt-Assertion` header or `CF_Authorization` cookie) against the
+team's signing keys, the application's AUD tag and an email allowlist on every `/admin/*` and
+`/api/admin/*` request, whatever hostname it arrives on. Without a valid token, or while the variables
+below are missing, those routes answer `403`/`503`.
+
+### Admin setup
+
+1. **Custom domain.** In the Pages project, open **Custom domains → Set up a custom domain** and add
+   `admin.semina.be`. The site root on that hostname redirects to `/admin/` (`functions/index.js`;
+   set `ADMIN_HOST` to use another hostname).
+2. **Access application.** In **Zero Trust → Access → Applications → Add an application →
+   Self-hosted**, set the domain to `admin.semina.be` (whole hostname, no path), and add an **Allow**
+   policy with the **Emails** selector listing the admin addresses. One-time PIN is the simplest
+   login method. Copy the **Application Audience (AUD) Tag** from the application's overview.
+3. **Environment variables.** In the Pages project, open **Settings → Variables and Secrets** and add,
+   for Production:
+   - `ACCESS_TEAM_DOMAIN`: the Zero Trust team domain, for example `pini` or `pini.cloudflareaccess.com`
+     (shown under **Zero Trust → Settings**).
+   - `ACCESS_AUD`: the AUD tag from step 2.
+   - `ADMIN_EMAILS`: comma-separated admin emails, the same addresses as the Access policy.
+4. Redeploy so the variables take effect.
+
+Clearing deletes rows from D1 for good as far as the dashboard is concerned. If that was a mistake,
+D1 Time Travel can restore the database to an earlier minute:
+`npx wrangler d1 time-travel restore <database-name> --timestamp=<ISO time before the clear>`.
+
 ## Development
 
 The pure simulation lives in `scripts/game-engine.js`; presentation and browser
