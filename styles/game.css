@@ -64,6 +64,7 @@ progress::-moz-progress-bar { background: #ae366f; }
 #playfield::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), #24203e0c calc(25% - 1px), #24203e0c 25%); pointer-events: none; }
 .game-object { position: absolute; top: 0; z-index: 2; width: 58px; height: 58px; font-size: 32px; padding: 0; border-radius: 50%; background: #fffaf2e8; border-color: #24203e44; box-shadow: 0 3px 0 #24203e18; transform: translateX(-50%); will-change: transform; animation: spawn .3s cubic-bezier(.3, 1.6, .5, 1) both; transition: border-color .15s, box-shadow .15s; }
 .game-object.in-zone { border-color: #24203e; box-shadow: 0 0 0 4px #ffd06e99, 0 3px 0 #24203e30; }
+.game-object:not(.in-zone) { cursor: default; }
 .game-object.bomb { border: 3px dashed #a52341; background: #ffe0e4; }
 .game-object.bomb::after { content: 'Avoid'; position: absolute; bottom: -3px; left: 0; width: 100%; font: 9px system-ui; font-weight: 800; color: #a52341; }
 .fever .game-object.target { border-color: #b22d6e; box-shadow: 0 0 0 4px #ffd06e, 0 4px 0 #b22d6e; }

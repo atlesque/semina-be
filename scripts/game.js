@@ -491,13 +491,11 @@
         node.addEventListener("pointerdown", event => {
           if (!event.isPrimary || event.button !== 0) return;
           event.preventDefault();
-          game.resolve(object.id, true);
-          render();
+          if (game.catchObject(object.id)) render();
         });
         node.addEventListener("click", () => {
           // Assistive technology can activate a button without a pointer event.
-          game.resolve(object.id, true);
-          render();
+          if (game.catchObject(object.id)) render();
         });
         node.style.left = `${(object.lane + .5) * 25}%`;
         objectNodes.set(object.id, node);

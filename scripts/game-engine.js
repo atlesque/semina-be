@@ -153,12 +153,19 @@
       }
       return true;
     }
+    // An emoji counts while any part of it overlaps the hit area above the lane buttons.
+    const inHitZone = object => object.age < exitAge(object) && (s.stationary || object.age >= object.travel * (1 - hitZone));
     function catchable(lane) {
-      return s.objects.find(object => object.lane === lane && object.age < exitAge(object) && (s.stationary || object.age >= object.travel * (1 - hitZone)));
+      return s.objects.find(object => object.lane === lane && inHitZone(object));
     }
     function catchLane(lane) {
       const object = catchable(lane);
       return object ? resolve(object.id, true) : false;
+    }
+    // Tapping an emoji directly only works once it reaches the hit area; earlier taps are ignored.
+    function catchObject(id) {
+      const object = s.objects.find(object => object.id === id);
+      return object && inHitZone(object) ? resolve(id, true) : false;
     }
     function spawn() {
       const tuning = waveTuning(s.wave);
@@ -218,7 +225,7 @@
       while (dt > 0) dt -= step(Math.min(dt, 50));
     }
     reset();
-    return { get state() { return s; }, start, reset, pause, resume, resolve, catchable, catchLane, advance, setPlayfieldHeight };
+    return { get state() { return s; }, start, reset, pause, resume, resolve, catchable, catchLane, catchObject, advance, setPlayfieldHeight };
   }
   const api = { createGame, multiplier, waveTuning, WAVES, CEILING };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
