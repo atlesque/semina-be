@@ -16,6 +16,8 @@ function object(game, kind = 'target', overrides = {}) {
   return item;
 }
 function catchTarget(game) { game.resolve(object(game).id, true); }
+// Missed targets cost hearts, so long idle simulations need lives that never run out.
+function endless(game) { game.state.hearts = Infinity; return game; }
 
 test('combo scoring applies the tier reached on the current catch', () => {
   assert.deepEqual([1, 4, 5, 9, 10, 19, 20].map(multiplier), [1, 1, 2, 2, 3, 3, 4]);
@@ -29,6 +31,7 @@ test('combo scoring applies the tier reached on the current catch', () => {
 });
 test('Fever activates after 20 catches, doubles points, cannot refill or overlap', () => {
   const { game, events } = setup();
+  endless(game);
   for (let i = 0; i < 20; i++) catchTarget(game);
   assert.equal(game.state.feverTime, 8000);
   assert.equal(game.state.feverCharge, 0);
@@ -83,14 +86,44 @@ test('damage cooldown prevents simultaneous taps from draining hearts', () => {
   game.resolve(object(game, 'bomb').id, true);
   assert.equal(game.state.hearts, 1);
 });
-test('escaped targets reset combo without losing a heart; other escapes are harmless', () => {
-  const { game } = setup();
+test('escaped targets cost a heart and reset combo; other escapes are harmless', () => {
+  const { game, events } = setup();
   catchTarget(game);
   game.resolve(object(game, 'decoy').id, false);
   game.resolve(object(game, 'bomb').id, false);
   assert.equal(game.state.combo, 1);
+  assert.equal(game.state.hearts, 3);
   game.resolve(object(game).id, false);
   assert.equal(game.state.combo, 0);
+  assert.equal(game.state.hearts, 2);
+  assert.equal(game.state.mistakes, 1);
+  assert.equal(events.at(-1).type, 'damage');
+  assert.equal(events.at(-1).missed, true);
+});
+test('missing targets during the damage cooldown breaks combo but cannot drain hearts', () => {
+  const { game } = setup();
+  game.resolve(object(game).id, false);
+  catchTarget(game);
+  game.resolve(object(game).id, false);
+  assert.equal(game.state.hearts, 2);
+  assert.equal(game.state.combo, 0);
+  game.advance(700);
+  game.resolve(object(game).id, false);
+  assert.equal(game.state.hearts, 1);
+});
+test('missing the last heart ends the run', () => {
+  const { game, events } = setup();
+  for (let i = 0; i < 3; i++) {
+    game.resolve(object(game).id, false);
+    game.advance(700);
+  }
+  assert.equal(game.state.hearts, 0);
+  assert.equal(game.state.phase, 'results');
+  assert.equal(events.at(-1).reason, 'hearts');
+});
+test('zen escapes never cost a heart', () => {
+  const { game } = setup('zen');
+  game.resolve(object(game).id, false);
   assert.equal(game.state.hearts, 3);
 });
 test('empty lanes have no effect and oldest object in a lane is caught first', () => {
@@ -135,7 +168,7 @@ test('emojis pass through the bottom and stay catchable until fully off screen',
   assert.equal(game.catchLane(0), true);
   assert.equal(game.state.correct, 1);
 });
-test('emojis that leave the screen uncaught count as an escape', () => {
+test('emojis that leave the screen uncaught count as a miss', () => {
   const { game } = setup();
   game.setPlayfieldHeight(416);
   catchTarget(game);
@@ -147,7 +180,7 @@ test('emojis that leave the screen uncaught count as an escape', () => {
   assert.ok(!game.state.objects.includes(item));
   assert.equal(game.catchLane(0), false);
   assert.equal(game.state.combo, 0);
-  assert.equal(game.state.hearts, 3);
+  assert.equal(game.state.hearts, 2);
 });
 test('stationary emojis still expire at the end of their travel time', () => {
   const { game } = setup('arcade', true);
@@ -180,6 +213,7 @@ test('pause freezes every simulation value and rejects catches', () => {
 });
 test('pause during a wave announcement preserves its remaining duration', () => {
   const { game } = setup();
+  endless(game);
   game.advance(15000);
   game.advance(500);
   game.pause();
@@ -209,14 +243,14 @@ test('wave boundary clears objects without escape penalties and preserves combos
   catchTarget(game);
   assert.equal(game.state.target, target);
 });
-test('waves never run out: an untouched run keeps going past wave 6', () => {
+test('waves never run out: a run that keeps its hearts goes on past wave 6', () => {
   const { game } = setup();
+  endless(game);
   game.advance(20 * (15000 + 1400));
   assert.notEqual(game.state.phase, 'results');
   assert.equal(game.state.wavesCompleted, 20);
   assert.equal(game.state.wave, 20);
   assert.equal(game.state.elapsed, 300000);
-  assert.equal(game.state.hearts, 3);
 });
 test('waves past 6 ramp toward the ceiling and then hold', () => {
   for (let i = 0; i < WAVES.length; i++) assert.equal(waveTuning(i), WAVES[i]);
@@ -243,6 +277,7 @@ test('third damaging catch ends the run, further interaction has no effect', () 
 });
 test('wave bonus is fixed, granted once, and optional', () => {
   const { game, events } = setup();
+  endless(game);
   for (let i = 0; i < 12; i++) catchTarget(game);
   assert.equal(events.filter(e => e.type === 'wave-clear').length, 1);
   assert.equal(game.state.waveAwarded, true);
@@ -283,6 +318,7 @@ test('spawn composition introduces bombs in wave 3 and enforces density limits',
     const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
     const game = createGame({ words, random });
     game.start('arcade', stationary);
+    endless(game);
     let bombs = 0;
     const seen = new Set();
     while (game.state.wavesCompleted < 14) {

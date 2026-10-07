@@ -235,7 +235,7 @@
         kick($("combo"), "pulse");
         tone(1040, .2);
         break;
-      case "damage": feedback("Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); damageEffect(); tone(160, .18); break;
+      case "damage": feedback(event.missed ? "Missed! −1 heart" : "Ouch! −1 heart"); announce(`${game.state.hearts} hearts remaining.`); damageEffect(); tone(160, .18); break;
       case "fever":
         feedback("FEVER! Double points ✦");
         announce("Fever! Double points for eight seconds.");

@@ -100,6 +100,19 @@
       if (s.combo) emit({ type: "combo-break" });
       s.combo = 0;
     }
+    function damage(object, missed) {
+      // A missed target always breaks the combo, even while invulnerable.
+      if (missed) breakCombo();
+      // Invulnerability after a hit: one gesture or a cluster of escapes cannot drain lives.
+      if (s.cooldown > 0) return;
+      breakCombo();
+      s.mistakes++;
+      s.hearts--;
+      s.cooldown = 700;
+      if (object.kind === "bomb") s.feverCharge = Math.max(0, s.feverCharge - 5);
+      emit({ type: "damage", object, missed });
+      if (!s.hearts) finish("hearts");
+    }
     function resolve(id, caught) {
       if (s.phase !== "playing") return false;
       const index = s.objects.findIndex(object => object.id === id);
@@ -118,19 +131,12 @@
         return true;
       }
       if (!caught) {
-        if (object.kind === "target") breakCombo();
+        // Letting the current emoji leave the screen uncaught costs a heart; other escapes are harmless.
+        if (object.kind === "target") damage(object, true);
         return true;
       }
       if (object.kind !== "target") {
-        // Resolve the object even during invulnerability; one gesture cannot drain lives.
-        if (s.cooldown > 0) return true;
-        s.mistakes++;
-        s.hearts--;
-        s.cooldown = 700;
-        breakCombo();
-        if (object.kind === "bomb") s.feverCharge = Math.max(0, s.feverCharge - 5);
-        emit({ type: "damage", object });
-        if (!s.hearts) finish("hearts");
+        damage(object, false);
         return true;
       }
       s.combo++;
