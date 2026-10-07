@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light" />
+    <title>Pini Arcade · Admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      * { box-sizing: border-box; }
+      :root { font-family: system-ui, sans-serif; color: #24203e; background: #fff5e9; }
+      body { margin: 0; padding: 24px 16px 48px; }
+      .wrap { max-width: 1000px; margin: auto; }
+      header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 24px; }
+      h1 { margin: 0; font-size: 30px; }
+      h1 span { color: #d74761; }
+      .who { font-size: 14px; opacity: .75; }
+      button { font: inherit; min-height: 40px; padding: 6px 16px; cursor: pointer; border: 2px solid #24203e; border-radius: 12px; color: inherit; background: #fffaf2; font-weight: 700; }
+      button:hover { background: #ffe4b6; }
+      button:focus-visible, input:focus-visible { outline: 3px solid #5647df; outline-offset: 3px; }
+      button:disabled { opacity: .5; cursor: default; }
+      .danger { background: #ca3255; border-color: #ca3255; color: #fff; }
+      .danger:hover { background: #a92445; }
+      .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+      .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+      section { background: #fffaf2; border: 2px solid #24203e; border-radius: 16px; padding: 16px; box-shadow: 4px 4px #ffd06e; }
+      section header { margin-bottom: 12px; }
+      h2 { margin: 0; font-size: 20px; }
+      table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 15px; }
+      th, td { padding: 6px 4px; text-align: left; border-bottom: 1px solid #24203e22; }
+      th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+      td.num, th.num { text-align: right; }
+      tr.cut td { border-bottom: 2px dashed #d74761; }
+      td.when { font-size: 13px; opacity: .7; white-space: nowrap; }
+      .empty { padding: 16px 0; opacity: .7; }
+      .notice { padding: 12px 16px; border-radius: 12px; background: #ffe4b6; margin-bottom: 20px; }
+      .notice.error { background: #f8d0d8; }
+      dialog { border: 2px solid #24203e; border-radius: 16px; padding: 20px; max-width: 420px; color: inherit; background: #fffaf2; }
+      dialog::backdrop { background: #24203e66; }
+      dialog h3 { margin-top: 0; }
+      dialog input { font: inherit; width: 100%; padding: 8px 10px; border: 2px solid #24203e; border-radius: 10px; margin: 8px 0 16px; }
+      dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 0; padding: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Pini Arcade <span>Admin</span></h1>
+        <div class="who" id="who"></div>
+      </header>
+      <div class="toolbar">
+        <button type="button" id="refresh">Refresh</button>
+        <button type="button" class="danger" data-clear="all">Clear all global highscores</button>
+      </div>
+      <div id="notice" class="notice" hidden></div>
+      <div class="boards" id="boards"></div>
+    </div>
+
+    <dialog id="confirm">
+      <form method="dialog">
+        <h3 id="confirm-title">Clear scores?</h3>
+        <p id="confirm-text"></p>
+        <label for="confirm-input">Type <strong>clear</strong> to confirm.</label>
+        <input id="confirm-input" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <menu>
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button value="ok" class="danger" id="confirm-ok" disabled>Delete scores</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script>
+      const LABELS = { "arcade-falling": "Falling", "arcade-stationary": "Stationary" };
+      const PUBLIC_BOARD_SIZE = 10;
+      const $ = id => document.getElementById(id);
+      const numbers = new Intl.NumberFormat("en");
+      const dates = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
+      let boards = [];
+
+      function notice(text, isError = false) {
+        $("notice").hidden = !text;
+        $("notice").textContent = text || "";
+        $("notice").classList.toggle("error", isError);
+      }
+
+      async function api(path, options) {
+        const response = await fetch(path, { credentials: "same-origin", ...options });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || `Request failed (${response.status}).`);
+        return body;
+      }
+
+      function cell(tag, text, className) {
+        const node = document.createElement(tag);
+        node.textContent = text;
+        if (className) node.className = className;
+        return node;
+      }
+
+      function render() {
+        const root = $("boards");
+        root.replaceChildren();
+        for (const board of boards) {
+          const section = document.createElement("section");
+          const head = document.createElement("header");
+          const title = document.createElement("div");
+          title.append(cell("h2", `Global · ${LABELS[board.category] || board.category}`),
+            cell("div", `${numbers.format(board.total)} score${board.total === 1 ? "" : "s"} stored`, "who"));
+          const clear = cell("button", "Clear board", "danger");
+          clear.type = "button";
+          clear.dataset.clear = board.category;
+          clear.disabled = board.total === 0;
+          head.append(title, clear);
+          section.append(head);
+          if (!board.scores.length) {
+            section.append(cell("p", "No scores yet.", "empty"));
+          } else {
+            const table = document.createElement("table");
+            const headRow = table.createTHead().insertRow();
+            headRow.append(cell("th", "#", "num"), cell("th", "Name"), cell("th", "Score", "num"), cell("th", "Saved"));
+            const tbody = table.createTBody();
+            board.scores.forEach((row, index) => {
+              const tr = tbody.insertRow();
+              if (index === PUBLIC_BOARD_SIZE - 1 && board.scores.length > PUBLIC_BOARD_SIZE) tr.className = "cut";
+              const saved = row.created_at ? dates.format(new Date(row.created_at)) : "";
+              tr.append(cell("td", index + 1, "num"), cell("td", row.name), cell("td", numbers.format(row.score), "num"), cell("td", saved, "when"));
+            });
+            section.append(table);
+            if (board.total > board.scores.length) section.append(cell("p", `Showing the top ${board.scores.length}. Players see the top ${PUBLIC_BOARD_SIZE}.`, "who"));
+          }
+          root.append(section);
+        }
+        const total = boards.reduce((sum, board) => sum + board.total, 0);
+        document.querySelector('[data-clear="all"]').disabled = total === 0;
+      }
+
+      async function load() {
+        $("refresh").disabled = true;
+        try {
+          const body = await api("/api/admin/scores");
+          boards = body.boards;
+          $("who").textContent = body.admin ? `Signed in as ${body.admin}` : "";
+          render();
+        } catch (error) {
+          notice(error.message, true);
+        } finally {
+          $("refresh").disabled = false;
+        }
+      }
+
+      function confirmClear(category) {
+        const scope = category === "all"
+          ? { title: "Clear all global highscores?", count: boards.reduce((sum, board) => sum + board.total, 0), what: "both global boards" }
+          : { title: `Clear Global · ${LABELS[category]}?`, count: boards.find(board => board.category === category)?.total ?? 0, what: `the ${LABELS[category]} global board` };
+        $("confirm-title").textContent = scope.title;
+        $("confirm-text").textContent = `This deletes ${numbers.format(scope.count)} score${scope.count === 1 ? "" : "s"} from ${scope.what} for every player. Local browser boards are not affected.`;
+        $("confirm-input").value = "";
+        $("confirm-ok").disabled = true;
+        $("confirm").returnValue = "";
+        $("confirm").showModal();
+        return new Promise(resolve => $("confirm").addEventListener("close", () => resolve($("confirm").returnValue === "ok"), { once: true }));
+      }
+
+      $("confirm-input").addEventListener("input", event => {
+        $("confirm-ok").disabled = event.target.value.trim().toLowerCase() !== "clear";
+      });
+      $("refresh").addEventListener("click", () => { notice(""); load(); });
+      document.addEventListener("click", async event => {
+        const button = event.target.closest("[data-clear]");
+        if (!button || button.disabled) return;
+        const category = button.dataset.clear;
+        if (!(await confirmClear(category))) return;
+        try {
+          const result = await api(`/api/admin/scores?category=${encodeURIComponent(category)}`, { method: "DELETE" });
+          notice(`Deleted ${numbers.format(result.deleted)} score${result.deleted === 1 ? "" : "s"}.`);
+        } catch (error) {
+          notice(error.message, true);
+        }
+        load();
+      });
+      load();
+    </script>
+  </body>
+</html>
