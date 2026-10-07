@@ -113,6 +113,18 @@ test('lane buttons only catch emojis touching the bottom of the playfield', () =
   assert.equal(game.catchLane(0), true);
   assert.equal(game.state.correct, 1);
 });
+test('tapping an emoji only catches it once it reaches the hit area', () => {
+  const { game } = setup();
+  game.setPlayfieldHeight(416);
+  const item = object(game, 'target', { age: 3900 });
+  assert.equal(game.catchObject(item.id), false);
+  assert.ok(game.state.objects.includes(item));
+  assert.equal(game.state.correct, 0);
+  assert.equal(game.state.hearts, 3);
+  item.age = 4000;
+  assert.equal(game.catchObject(item.id), true);
+  assert.equal(game.state.correct, 1);
+});
 test('emojis pass through the bottom and stay catchable until fully off screen', () => {
   const { game } = setup();
   game.setPlayfieldHeight(416);
