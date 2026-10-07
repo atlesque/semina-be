@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pini Arcade · Free 90-second emoji arcade game</title>
-    <meta name="description" content="Pini Arcade is a free 90-second emoji arcade game in your browser. Catch the right emoji, dodge decoys, build combos, trigger Fever and climb the global leaderboard." />
+    <title>Pini Arcade · Free endless emoji arcade game</title>
+    <meta name="description" content="Pini Arcade is a free endless emoji arcade game in your browser. Catch the right emoji, dodge decoys, build combos, trigger Fever and climb the global leaderboard." />
     <link rel="canonical" href="https://semina.be/" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#fff5e9" />
@@ -31,7 +31,7 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://semina.be/" />
     <meta property="og:title" content="Pini Arcade · Catch, combo, go Fever!" />
-    <meta property="og:description" content="Catch the right emoji, build your combo and chase the global leaderboard in a 90-second browser arcade game." />
+    <meta property="og:description" content="Catch the right emoji, build your combo and chase the global leaderboard in an endless browser arcade game." />
     <meta property="og:image" content="https://semina.be/og-image.png" />
     <meta property="og:image:secure_url" content="https://semina.be/og-image.png" />
     <meta property="og:image:type" content="image/png" />
@@ -40,7 +40,7 @@
     <meta property="og:image:alt" content="Pini Arcade title card: Catch your target. Find your rhythm. How far can your combo go?" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Pini Arcade · Catch, combo, go Fever!" />
-    <meta name="twitter:description" content="Catch the right emoji, build your combo and chase the global leaderboard in a 90-second browser arcade game." />
+    <meta name="twitter:description" content="Catch the right emoji, build your combo and chase the global leaderboard in an endless browser arcade game." />
     <meta name="twitter:image" content="https://semina.be/og-image.png" />
     <meta name="twitter:image:alt" content="Pini Arcade title card: Catch your target. Find your rhythm. How far can your combo go?" />
     <script type="application/ld+json">
@@ -50,7 +50,7 @@
         "name": "Pini Arcade",
         "url": "https://semina.be/",
         "image": "https://semina.be/og-image.png",
-        "description": "Pini Arcade is a free 90-second emoji arcade game in your browser. Catch the right emoji, dodge decoys, build combos, trigger Fever and climb the global leaderboard.",
+        "description": "Pini Arcade is a free endless emoji arcade game in your browser. Catch the right emoji, dodge decoys, build combos, trigger Fever and climb the global leaderboard.",
         "genre": "Arcade",
         "gamePlatform": "Web browser",
         "applicationCategory": "Game",
@@ -69,7 +69,7 @@
       <a class="brand" href="#" id="brand" aria-label="Pini title">Pini<span>✦</span></a>
       <div class="stat run-stat"><small>Score</small><strong id="score">0</strong></div>
       <div class="stat"><small>Best · this browser</small><strong id="best">0</strong></div>
-      <div class="stat run-stat timer-stat"><small id="time-label">Time</small><strong id="timer">1:30</strong></div>
+      <div class="stat run-stat timer-stat"><small id="time-label">Time</small><strong id="timer">0:00</strong></div>
       <div class="stat hearts run-stat"><small>Lives</small><strong id="hearts" aria-label="3 hearts">♥ ♥ ♥</strong></div>
       <div class="hud-buttons">
         <button id="sound-toggle" class="icon-button" aria-label="Mute sound" aria-pressed="false">🔊</button>
@@ -82,7 +82,7 @@
         <h1 id="title">Pini<span>Arcade</span></h1>
         <p class="intro">Catch your target. Find your rhythm.<br>How far can your combo go?</p>
         <div class="mode-picker" role="group" aria-label="Game mode">
-          <button id="arcade-mode" aria-pressed="true">✦ Arcade <small>90 seconds · 3 hearts</small></button>
+          <button id="arcade-mode" aria-pressed="true">✦ Arcade <small>Endless waves · 3 hearts</small></button>
           <button id="zen-mode" aria-pressed="false">☁ Zen <small>No clock. No pressure.</small></button>
         </div>
         <label class="toggle"><input id="stationary" type="checkbox"> Stationary targets <span>Reduced motion</span></label>
@@ -95,7 +95,7 @@
 
       <section id="game-screen" hidden aria-label="Game">
         <div class="target-panel">
-          <div class="wave-line"><span id="wave-label">Wave 1 / 6</span><span id="wave-goal">Goal: 0 / 8 · +500</span></div>
+          <div class="wave-line"><span id="wave-label">Wave 1</span><span id="wave-goal">Goal: 0 / 8 · +500</span></div>
           <div class="target-word"><span id="target-emoji" aria-hidden="true">🍎</span><h2 id="wordmark">Applini</h2></div>
           <p id="instruction">Catch 🍎. Avoid the others.</p>
           <div class="combo-row"><strong id="combo">0 combo · ×1</strong><span id="fever-label">Fever 0 / 20</span></div>
@@ -142,7 +142,7 @@
         </div>
         <dl class="results-stats hide-when-saved">
           <div><dt>Best combo</dt><dd id="result-combo">0</dd></div>
-          <div><dt>Waves completed</dt><dd id="result-waves">0 / 6</dd></div>
+          <div><dt>Waves completed</dt><dd id="result-waves">0</dd></div>
           <div><dt>Correct catches</dt><dd id="result-catches">0</dd></div>
           <div><dt>Mistakes</dt><dd id="result-mistakes">0</dd></div>
         </dl>

@@ -3,7 +3,9 @@
 A dependency-free, static emoji arcade game. Serve this folder over HTTP and open
 `index.html` (for example, `python3 -m http.server 8765`).
 
-Arcade runs last 90 seconds of active play across six waves, with three hearts.
+Arcade waves are endless: a run lasts until all three hearts are gone. Each wave is
+15 seconds. Waves 1–6 are hand-tuned; after that, six more waves ramp toward a fixed
+ceiling (an emoji every 0.52 s, 1.2 s falls, 18% bombs) that then holds for good.
 Catch the displayed emoji, avoid decoys and bombs, and build a combo. Keys **1–4**
 catch the oldest object in each lane; **P** or **Escape** opens the pause menu.
 Stationary targets are available on the title screen and enabled by default when

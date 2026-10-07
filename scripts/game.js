@@ -206,17 +206,18 @@
     document.body.style.backgroundColor = pageColor = color;
     kick(document.body, "page-fade");
   }
-  // Each wave quickens the lane streaks a little.
+  // Each wave quickens the lane streaks a little, up to wave 6's pace.
   function setTempo() {
     const s = game.state;
-    field.style.setProperty("--tempo", `${s.mode === "zen" ? 3 : 2.4 - s.wave * .32}s`);
-    field.style.setProperty("--intensity", s.mode === "zen" ? .2 : .25 + s.wave * .08);
+    const wave = Math.min(s.wave, 5);
+    field.style.setProperty("--tempo", `${s.mode === "zen" ? 3 : 2.4 - wave * .32}s`);
+    field.style.setProperty("--intensity", s.mode === "zen" ? .2 : .25 + wave * .08);
   }
   function handleEvent(event) {
     switch (event.type) {
       case "wave":
         clearVisuals();
-        setPageColor(palettes[game.state.wave]);
+        setPageColor(palettes[game.state.wave % palettes.length]);
         setTempo();
         announce(game.state.mode === "zen" ? `Zen mode. Catch ${event.target.word}, ${event.target.emoji}. Every catch counts.` : `Wave ${event.wave}. Catch ${event.target.word}, ${event.target.emoji}. Avoid the others.`);
         break;
@@ -242,7 +243,7 @@
         tone(1400, .3);
         break;
       case "wave-clear": feedback("Wave clear! +500 ✦"); announce("Wave catch goal complete. 500 bonus points."); tone(880, .2); break;
-      case "finish": showResults(event.reason); break;
+      case "finish": showResults(); break;
       case "pause": announce("Game paused."); break;
     }
   }
@@ -254,7 +255,7 @@
     mode = selected;
     $("arcade-mode").setAttribute("aria-pressed", String(mode === "arcade"));
     $("zen-mode").setAttribute("aria-pressed", String(mode === "zen"));
-    setText($("timer"), mode === "arcade" ? "1:30" : "∞");
+    setText($("timer"), mode === "arcade" ? "0:00" : "∞");
     setText($("hearts"), mode === "arcade" ? "♥ ♥ ♥" : "—");
     updateRecordKey();
   }
@@ -404,7 +405,7 @@
     PiniTrophy.stop();
     $("trophy").hidden = true;
   }
-  function showResults(reason) {
+  function showResults() {
     if (savedResult) return;
     savedResult = true;
     clearVisuals();
@@ -413,10 +414,10 @@
     $("game-screen").hidden = true;
     $("results-screen").hidden = false;
     document.body.classList.add("results-open");
-    $("result-title").textContent = reason === "hearts" ? "Out of hearts. Another try?" : "90 seconds. Nicely caught!";
+    $("result-title").textContent = `Out of hearts after wave ${s.wave + 1}. Another try?`;
     $("personal-best").textContent = `${isBest ? "✦ New personal best!" : "Personal best:"} ${number(records[recordKey] || 0)}`;
     $("result-combo").textContent = s.bestCombo;
-    $("result-waves").textContent = `${s.wavesCompleted} / 6`;
+    $("result-waves").textContent = `${s.wavesCompleted}`;
     $("result-catches").textContent = s.correct;
     $("result-mistakes").textContent = s.mistakes;
     $("result-record-note").textContent = storageAvailable ? "Records belong to this browser." : "Storage is unavailable. This record lasts for this visit only.";
@@ -530,9 +531,9 @@
       selectMode(mode);
       return;
     }
-    const secondsLeft = Math.ceil((90000 - s.elapsed) / 1000);
-    setText($("timer"), s.mode === "zen" ? "∞" : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`);
-    $("timer").parentElement.classList.toggle("urgent", s.mode === "arcade" && s.phase === "playing" && secondsLeft <= 10);
+    // Arcade waves never run out, so the clock counts up from the start of the run.
+    const seconds = Math.floor(s.elapsed / 1000);
+    setText($("timer"), s.mode === "zen" ? "∞" : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`);
     $("hearts").parentElement.classList.toggle("critical", s.mode === "arcade" && s.hearts === 1);
     setText($("hearts"), s.mode === "zen" ? "—" : "♥ ".repeat(s.hearts).trim() || "♡ ♡ ♡");
     setAttr($("hearts"), "aria-label", s.mode === "zen" ? "Unlimited lives" : `${s.hearts} hearts`);
@@ -544,8 +545,8 @@
     setText($("wordmark"), word);
     setText($("target-emoji"), s.target.emoji);
     setText($("instruction"), s.mode === "zen" ? `Catch ${s.target.emoji}. Take your time.` : `Catch ${s.target.emoji}. Avoid the others.`);
-    setText($("wave-label"), s.mode === "zen" ? "Zen · just for joy" : `Wave ${s.wave + 1} / 6`);
-    setText($("wave-goal"), s.mode === "zen" ? "Every catch counts" : s.waveAwarded ? "Goal complete! +500" : `Goal: ${s.waveCatches} / ${PiniGame.WAVES[s.wave].goal} · +500`);
+    setText($("wave-label"), s.mode === "zen" ? "Zen · just for joy" : `Wave ${s.wave + 1}`);
+    setText($("wave-goal"), s.mode === "zen" ? "Every catch counts" : s.waveAwarded ? "Goal complete! +500" : `Goal: ${s.waveCatches} / ${PiniGame.waveTuning(s.wave).goal} · +500`);
     setText($("combo"), `${s.combo} combo · ×${PiniGame.multiplier(s.combo)}`);
     $("combo").classList.toggle("hot", s.combo >= 10);
     setText($("fever-label"), s.feverTime ? `✦ Fever! ×2 · ${(s.feverTime / 1000).toFixed(1)}s` : `Fever ${s.feverCharge} / 20`);
@@ -573,7 +574,7 @@
       } else if (s.phase === "resume") {
         overlay.append(`Ready? ${Math.ceil(s.resumeTime / 1000)}`);
       } else {
-        overlay.append(s.mode === "zen" ? "A little Zen" : `Wave ${s.wave + 1} / 6`);
+        overlay.append(s.mode === "zen" ? "A little Zen" : `Wave ${s.wave + 1}`);
         const small = document.createElement("small");
         small.textContent = `Catch ${s.target.emoji} · ${s.target.word}${s.mode === "arcade" ? ". Avoid the others." : ""}`;
         overlay.append(small);

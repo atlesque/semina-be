@@ -5,8 +5,9 @@
   const BOARD_SIZE = 10;
   // Only Arcade runs end with a result; Zen has no finish to submit.
   const CATEGORIES = ["arcade-falling", "arcade-stationary"];
-  // At most 101 spawns in 90 s at 800 points (×4 combo, ×2 Fever) plus six wave bonuses stays far under this.
-  const MAX_SCORE = 300000;
+  // Waves are endless, so this is only a sanity ceiling: a perfect wave at the spawn ceiling earns
+  // under 24,000 points, so reaching it takes over 400 flawless waves (well over an hour and a half).
+  const MAX_SCORE = 9999999;
 
   // Used while typing: drops anything that is not a letter or digit.
   const cleanName = value => String(value ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, NAME_MAX_LENGTH);
