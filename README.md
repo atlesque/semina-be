@@ -6,7 +6,8 @@ A dependency-free, static emoji arcade game. Serve this folder over HTTP and ope
 Arcade waves are endless: a run lasts until all three hearts are gone. Each wave is
 15 seconds. Waves 1–6 are hand-tuned; after that, six more waves ramp toward a fixed
 ceiling (an emoji every 0.52 s, 1.2 s falls, 18% bombs) that then holds for good.
-Catch the displayed emoji, avoid decoys and bombs, and build a combo. Keys **1–4**
+Catch the displayed emoji before it falls off the screen (letting one through costs a
+heart), avoid decoys and bombs, and build a combo. Keys **1–4**
 catch the oldest object in each lane; **P** or **Escape** opens the pause menu.
 Stationary targets are available on the title screen and enabled by default when
 the browser prefers reduced motion. Zen keeps the relaxed, untimed loop.
