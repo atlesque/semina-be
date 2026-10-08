@@ -8,7 +8,8 @@ import * as pageGuard from '../functions/admin/_middleware.js';
 import * as admin from '../functions/api/admin/scores.js';
 import * as root from '../functions/index.js';
 
-const migration = readFileSync(new URL('../migrations/0001_create_scores.sql', import.meta.url), 'utf8');
+const migration = ['0001_create_scores.sql', '0002_score_origin.sql']
+  .map(file => readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8')).join('\n');
 const ISSUER = 'https://pini.cloudflareaccess.com';
 const AUD = 'aud-tag-123';
 const ADMIN = 'admin@example.com';
@@ -62,7 +63,12 @@ function fakeD1() {
       };
       return statement;
     },
-    seed(rows) { for (const [name, score, category] of rows) db.prepare('INSERT INTO scores (name, score, category) VALUES (?, ?, ?)').run(name, score, category); },
+    seed(rows) {
+      for (const [name, score, category, ip = null, fingerprint = null] of rows) {
+        db.prepare('INSERT INTO scores (name, score, category, ip, fingerprint, fingerprint_data, request_meta) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .run(name, score, category, ip, fingerprint, fingerprint && '{"webdriver":false}', ip && '{"city":"Ghent"}');
+      }
+    },
   };
 }
 
@@ -128,7 +134,7 @@ test('admins see every global board and can clear one or all of them', async () 
   const DB = fakeD1();
   DB.seed([['Alpha', 900, 'arcade-falling'], ['Bravo', 1200, 'arcade-falling'], ['Cee', 300, 'arcade-stationary']]);
   const env = { ...ENV, DB };
-  const listed = await (await admin.onRequestGet({ env, data: { adminEmail: ADMIN } })).json();
+  const listed = await (await admin.onRequestGet({ env, request: request(''), data: { adminEmail: ADMIN } })).json();
   assert.equal(listed.admin, ADMIN);
   assert.deepEqual(listed.boards.map(board => [board.category, board.total, board.scores.map(row => row.name)]),
     [['arcade-falling', 2, ['Bravo', 'Alpha']], ['arcade-stationary', 1, ['Cee']]]);
@@ -137,7 +143,7 @@ test('admins see every global board and can clear one or all of them', async () 
   assert.equal((await del('?category=zen-falling')).status, 400);
   assert.equal((await del('')).status, 400);
   assert.deepEqual(await (await del('?category=arcade-falling')).json(), { category: 'arcade-falling', deleted: 2 });
-  const after = await (await admin.onRequestGet({ env, data: {} })).json();
+  const after = await (await admin.onRequestGet({ env, request: request(''), data: {} })).json();
   assert.deepEqual(after.boards.map(board => board.total), [0, 1]);
   assert.deepEqual(await (await del('?category=all')).json(), { category: 'all', deleted: 1 });
 });
@@ -148,7 +154,7 @@ test('clearing refuses cross-origin requests', async () => {
   const response = await admin.onRequestDelete({ env: { DB }, request: new Request('https://admin.semina.be/api/admin/scores?category=all', {
     method: 'DELETE', headers: { origin: 'https://evil.example' } }) });
   assert.equal(response.status, 403);
-  const listed = await (await admin.onRequestGet({ env: { DB }, data: {} })).json();
+  const listed = await (await admin.onRequestGet({ env: { DB }, request: request(''), data: {} })).json();
   assert.equal(listed.boards[0].total, 1);
 });
 
@@ -158,4 +164,47 @@ test('the admin hostname opens the dashboard at its root', async () => {
   assert.equal(redirect.status, 302);
   assert.equal(redirect.headers.get('location'), 'https://admin.semina.be/admin/');
   assert.equal(await (await root.onRequest({ request: new Request('https://semina.be/'), env: {}, next })).text(), 'game');
+});
+
+test('admins can open the details of one score with other scores from the same device and IP', async () => {
+  const DB = fakeD1();
+  DB.seed([
+    ['Alpha', 900, 'arcade-falling', '203.0.113.7', 'fp1'],
+    ['Bravo', 1200, 'arcade-falling', '203.0.113.7', 'fp2'],
+    ['Alias', 500, 'arcade-stationary', '198.51.100.9', 'fp1'],
+    ['Old', 300, 'arcade-falling'],
+  ]);
+  const env = { DB };
+  const get = query => admin.onRequestGet({ env, data: {}, request: request('', { url: `https://admin.semina.be/api/admin/scores${query}` }) });
+  const listed = await (await get('')).json();
+  assert.deepEqual(listed.boards[0].scores.map(row => [row.name, row.ip, row.fingerprint, row.device_scores]),
+    [['Bravo', '203.0.113.7', 'fp2', 1], ['Alpha', '203.0.113.7', 'fp1', 2], ['Old', null, null, 0]]);
+
+  const details = await (await get('?id=1')).json();
+  assert.equal(details.score.name, 'Alpha');
+  assert.equal(details.score.rank, 2);
+  assert.deepEqual(details.score.fingerprint_data, { webdriver: false });
+  assert.deepEqual(details.score.request_meta, { city: 'Ghent' });
+  assert.deepEqual(details.sameFingerprint.scores.map(row => row.name), ['Alias']);
+  assert.deepEqual(details.sameIp.scores.map(row => row.name), ['Bravo']);
+  assert.equal(details.sameIp.total, 1);
+
+  const old = await (await get('?id=4')).json();
+  assert.equal(old.score.ip, null);
+  assert.deepEqual([old.sameFingerprint.total, old.sameIp.total], [0, 0], 'missing values match nothing');
+  assert.equal((await get('?id=99')).status, 404);
+  for (const id of ['0', 'abc', '1;DROP', '-1', '']) assert.equal((await get(`?id=${encodeURIComponent(id)}`)).status, 400, id);
+});
+
+test('admins can delete a single score', async () => {
+  const DB = fakeD1();
+  DB.seed([['Alpha', 900, 'arcade-falling'], ['Bravo', 1200, 'arcade-falling']]);
+  const env = { DB };
+  const del = (query, headers = {}) => admin.onRequestDelete({ env, request: new Request(`https://admin.semina.be/api/admin/scores${query}`, { method: 'DELETE', headers }) });
+  assert.equal((await del('?id=1', { origin: 'https://evil.example' })).status, 403);
+  assert.equal((await del('?id=x')).status, 400);
+  assert.deepEqual(await (await del('?id=1')).json(), { id: 1, deleted: 1 });
+  assert.equal((await del('?id=1')).status, 404);
+  const listed = await (await admin.onRequestGet({ env, request: request(''), data: {} })).json();
+  assert.deepEqual(listed.boards[0].scores.map(row => row.name), ['Bravo']);
 });

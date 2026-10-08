@@ -32,6 +32,7 @@
   let recordKey = "arcade-falling";
   let overlaySignature = "";
   const Board = PiniLeaderboard;
+  const Fingerprint = window.PiniFingerprint;
   let localBoards = {};
   let playerName = "";
   // Increments per results screen so late responses never paint a newer one.
@@ -327,6 +328,8 @@
     const category = recordKey;
     const canSubmit = Board.isValidCategory(category) && Board.isValidScore(score);
     $("score-form").hidden = !canSubmit;
+    // Start reading the browser fingerprint now so it is usually ready by the time the score is saved.
+    if (canSubmit && Fingerprint) Fingerprint.collect();
     $("player-name").disabled = $("submit-score").disabled = false;
     $("player-name").value = playerName;
     $("score-form-status").textContent = "";
@@ -373,10 +376,11 @@
     const localText = localRank ? `#${localRank} in this browser` : "Saved in this browser";
     status.textContent = `${localText}. Sending to the global board…`;
     try {
+      const fingerprint = Fingerprint ? await Fingerprint.collect() : null;
       const response = await fetch("/api/scores", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, score, category }),
+        body: JSON.stringify({ name, score, category, fingerprint }),
       });
       if (!response.ok) throw new Error(response.status);
       const result = await response.json();
