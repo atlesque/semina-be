@@ -7,6 +7,6 @@
   "seed": 446638516,
   "audio": "audio/pini-arcade-lounge.mp3",
   "edit": "Trimmed leading/trailing silence, -3 dB, 160 kbps; loops from the fade-out into the intro",
-  "wav_path": "D:\\Atlesque Media VOF Dropbox\\Alexander Van Maele\\AI Render Node\\music\\2026-10-06\\20261006-104025-ba6b2f\\20261006-104025-ba6b2f.wav",
-  "metadata_path": "D:\\Atlesque Media VOF Dropbox\\Alexander Van Maele\\AI Render Node\\music\\2026-10-06\\20261006-104025-ba6b2f\\20261006-104025-ba6b2f.json"
+  "wav_path": "music/2026-10-06/20261006-104025-ba6b2f/20261006-104025-ba6b2f.wav",
+  "metadata_path": "music/2026-10-06/20261006-104025-ba6b2f/20261006-104025-ba6b2f.json"
 }
