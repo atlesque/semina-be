@@ -405,6 +405,12 @@
       $("confirm-input").addEventListener("input", event => {
         $("confirm-ok").disabled = event.target.value.trim().toLowerCase() !== "clear";
       });
+      // Enter in the input would otherwise submit the form with its first button, Cancel.
+      $("confirm-input").addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        if (!$("confirm-ok").disabled) $("confirm").close("ok");
+      });
       $("refresh").addEventListener("click", () => {
         if (busy) return;
         notice("");
