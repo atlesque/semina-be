@@ -177,8 +177,7 @@ test('admins can open the details of one score with other scores from the same d
   const env = { DB };
   const get = query => admin.onRequestGet({ env, data: {}, request: request('', { url: `https://admin.semina.be/api/admin/scores${query}` }) });
   const listed = await (await get('')).json();
-  assert.deepEqual(listed.boards[0].scores.map(row => [row.name, row.ip, row.fingerprint, row.device_scores]),
-    [['Bravo', '203.0.113.7', 'fp2', 1], ['Alpha', '203.0.113.7', 'fp1', 2], ['Old', null, null, 0]]);
+  assert.deepEqual(Object.keys(listed.boards[0].scores[0]), ['id', 'name', 'score', 'created_at'], 'the board list leaves out IPs and fingerprints');
 
   const details = await (await get('?id=1')).json();
   assert.equal(details.score.name, 'Alpha');

@@ -128,3 +128,18 @@ test('fingerprint signals are clipped to safe sizes', () => {
   assert.equal(clean.ok, true);
   assert.equal('n' in clean, false);
 });
+
+test('IP addresses and fingerprints are cleared after the retention period, scores stay', async () => {
+  const DB = fakeD1();
+  const headers = { 'cf-connecting-ip': '203.0.113.7', 'user-agent': 'UA' };
+  await postFrom({ DB }, { name: 'Old', score: 900, category: 'arcade-falling', fingerprint: SIGNALS }, { headers, cf: { country: 'BE', asn: 1, city: 'Ghent' } });
+  await postFrom({ DB }, { name: 'New', score: 800, category: 'arcade-falling', fingerprint: SIGNALS }, { headers });
+  const day = 86400000;
+  assert.equal(await api.pruneOrigins(DB, Date.now() + (api.ORIGIN_RETENTION_DAYS - 1) * day), 0);
+  assert.equal(await api.pruneOrigins(DB, Date.now() + (api.ORIGIN_RETENTION_DAYS + 1) * day), 2);
+  for (const row of DB.rows()) {
+    assert.deepEqual([row.ip, row.country, row.asn, row.user_agent, row.request_meta, row.fingerprint, row.fingerprint_data], Array(7).fill(null));
+  }
+  assert.deepEqual(DB.rows().map(row => [row.name, row.score]), [['Old', 900], ['New', 800]]);
+  assert.equal(await api.pruneOrigins(DB, Date.now() + 365 * day), 0, 'already cleared rows are not touched again');
+});

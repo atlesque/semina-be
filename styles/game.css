@@ -45,6 +45,10 @@ main { position: relative; height: calc(100% - 90px); }
 .title-emojis { display: flex; justify-content: center; gap: 22px; margin-top: 18px; font-size: 30px; }
 .repo-link { display: inline-flex; margin-top: 16px; padding: 6px; border-radius: 50%; color: inherit; opacity: .7; transition: opacity .15s, transform .15s; }
 .repo-link:hover, .repo-link:focus-visible { opacity: 1; transform: scale(1.1); }
+.title-links { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.title-links .repo-link { margin-top: 0; }
+.privacy-link { color: inherit; font-size: 13px; font-weight: 700; opacity: .7; }
+.privacy-link:hover, .privacy-link:focus-visible { opacity: 1; }
 #game-screen { height: 100%; max-width: 850px; margin: auto; position: relative; display: flex; flex-direction: column; }
 .target-panel { z-index: 1; padding: 8px 24px 14px; text-align: center; flex-shrink: 0; }
 .wave-line, .combo-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; }
@@ -101,6 +105,8 @@ body.paused .results-screen h2, body.paused .trophy { animation-play-state: runn
 .score-form-row { display: flex; gap: 8px; }
 .score-form input { flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; border: 2px solid #24203e; border-radius: 16px; background: #fffaf2; color: inherit; font-size: 18px; font-weight: 700; }
 .score-form-status { margin: 6px 0 0; font-size: 13px; }
+.score-form-privacy { margin: 8px 0 0; font-size: 11px; line-height: 1.5; opacity: .75; }
+.score-form-privacy a { color: inherit; font-weight: 700; }
 .score-form-status:empty { display: none; }
 .results-screen > .score-form-status { margin: 0 0 20px; font-weight: 700; }
 .results-screen.saved .hide-when-saved { display: none; }

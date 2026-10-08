@@ -59,10 +59,11 @@ A fingerprint is a strong hint, not proof: a determined cheater can spoof every 
 devices (two stock iPhones of the same model, for example) can share one. A score with no fingerprint
 or `webdriver: yes` is worth a closer look.
 
-IP addresses and fingerprints are personal data under the GDPR. They are kept only to protect the
-leaderboard from abuse (legitimate interest), are visible only to admins, and should be mentioned in
-the site's privacy notice; consider pruning them from old scores, for example
-`UPDATE scores SET ip = NULL, user_agent = NULL, request_meta = NULL, fingerprint_data = NULL WHERE created_at < date('now', '-90 days')`.
+IP addresses and fingerprints are personal data under the GDPR. `privacy.html` is the site's privacy
+policy (linked from the title screen and the save-score form) and explains this to players. They are
+only collected when a player saves a score, are visible only to admins, and are cleared after 90 days
+(`ORIGIN_RETENTION_DAYS`): `pruneOrigins` nulls them on every score save and every admin board load,
+leaving the name and score. Keep the policy in step with any change to what is collected.
 
 ### Cloudflare setup
 
@@ -84,10 +85,10 @@ migration with `--local`.
 ## Admin dashboard
 
 `admin.semina.be` opens a dashboard (`admin/index.html`) that shows both global boards (top 50 each,
-with a line under the top 10 players see, each score's IP and a device badge when one fingerprint has
-several scores). It can delete a single score, clear one board or both, and open a details screen
-for any score with everything stored about its submission plus the other scores from the same
-fingerprint and the same IP. It talks to `GET /api/admin/scores`, `GET /api/admin/scores?id=<id>`,
+with a line under the top 10 players see). It can delete a single score, clear one board or both, and
+open a details screen for any score: its board, rank and a delete button, with a **Show diagnostics**
+box (closed by default) whose tabs show the IP details, the browser fingerprint, other scores from the
+same fingerprint and other scores from the same IP. It talks to `GET /api/admin/scores`, `GET /api/admin/scores?id=<id>`,
 `DELETE /api/admin/scores?id=<id>` and
 `DELETE /api/admin/scores?category=<arcade-falling|arcade-stationary|all>`.
 

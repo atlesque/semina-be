@@ -1,6 +1,6 @@
 // Admin view of the global leaderboard. functions/api/admin/_middleware.js has already checked
 // the Cloudflare Access JWT before these handlers run.
-import { CATEGORIES } from "../scores.js";
+import { CATEGORIES, pruneOrigins } from "../scores.js";
 
 export const ADMIN_BOARD_SIZE = 50;
 export const RELATED_LIMIT = 25;
@@ -47,13 +47,11 @@ export async function onRequestGet({ request, env, data }) {
     const id = scoreId(idParam);
     return id ? scoreDetails(env.DB, id) : json({ error: "Invalid score id." }, 400);
   }
+  await pruneOrigins(env.DB);
   const boards = [];
   for (const category of CATEGORIES) {
-    // device_scores counts every stored score from the same fingerprint, to make repeat devices stand out.
     const { results } = await env.DB
-      .prepare(`SELECT id, name, score, created_at, ip, country, fingerprint,
-          CASE WHEN fingerprint IS NULL THEN 0 ELSE (SELECT COUNT(*) FROM scores AS other WHERE other.fingerprint = scores.fingerprint) END AS device_scores
-        FROM scores WHERE category = ?1 ORDER BY score DESC, id ASC LIMIT ?2`)
+      .prepare("SELECT id, name, score, created_at FROM scores WHERE category = ?1 ORDER BY score DESC, id ASC LIMIT ?2")
       .bind(category, ADMIN_BOARD_SIZE)
       .all();
     const { count } = await env.DB.prepare("SELECT COUNT(*) AS count FROM scores WHERE category = ?1").bind(category).first();

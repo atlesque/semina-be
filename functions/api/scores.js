@@ -8,6 +8,8 @@ export const BOARD_SIZE = 10;
 const MAX_BODY_BYTES = 8192;
 const MAX_FINGERPRINT_JSON = 4096;
 const FINGERPRINT_KEY = /^[A-Za-z][A-Za-z0-9]{0,39}$/;
+// IP addresses and fingerprints are kept only this long (see privacy.html); scores stay.
+export const ORIGIN_RETENTION_DAYS = 90;
 const REQUEST_META_KEYS = ["asOrganization", "city", "region", "timezone", "colo", "tlsVersion", "httpProtocol"];
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -60,6 +62,20 @@ export function requestOrigin(request) {
   };
 }
 
+// Clears the submission details of scores older than the retention period. Runs whenever a score is
+// saved and whenever the admin opens the boards, so nothing outlives it by much.
+export async function pruneOrigins(db, now = Date.now()) {
+  const cutoff = new Date(now - ORIGIN_RETENTION_DAYS * 86400000).toISOString();
+  const { meta } = await db
+    .prepare(`UPDATE scores SET ip = NULL, country = NULL, asn = NULL, user_agent = NULL, request_meta = NULL,
+        fingerprint = NULL, fingerprint_data = NULL
+      WHERE created_at < ?1 AND (ip IS NOT NULL OR country IS NOT NULL OR asn IS NOT NULL OR user_agent IS NOT NULL
+        OR request_meta IS NOT NULL OR fingerprint IS NOT NULL)`)
+    .bind(cutoff)
+    .run();
+  return meta.changes;
+}
+
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ error: "Leaderboard is not configured." }, 503);
   const category = new URL(request.url).searchParams.get("category") || CATEGORIES[0];
@@ -89,6 +105,7 @@ export async function onRequestPost({ request, env }) {
     .bind(name, score, category, origin.ip, origin.country, origin.asn, origin.userAgent, origin.meta, fingerprintId, fingerprintData)
     .run();
   const id = meta.last_row_id;
+  await pruneOrigins(env.DB);
   const above = await env.DB
     .prepare("SELECT COUNT(*) AS count FROM scores WHERE category = ?1 AND (score > ?2 OR (score = ?2 AND id < ?3))")
     .bind(category, score, id)
