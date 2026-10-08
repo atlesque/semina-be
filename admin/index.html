@@ -63,6 +63,14 @@
       dialog h3 { margin-top: 0; }
       dialog input { font: inherit; width: 100%; padding: 8px 10px; border: 2px solid #24203e; border-radius: 10px; margin: 8px 0 16px; }
       dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 0; padding: 0; }
+      .boards, .details { transition: opacity .15s; }
+      .busy .boards, .busy .details { opacity: .45; pointer-events: none; }
+      .toolbar button[aria-disabled] { opacity: .5; cursor: progress; }
+      .loader { position: fixed; left: 50%; bottom: 24px; z-index: 10; transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+        max-width: calc(100% - 32px); padding: 10px 18px; border: 2px solid #24203e; border-radius: 999px; background: #fffaf2; box-shadow: 4px 4px #ffd06e; font-weight: 700; }
+      .spinner { flex: none; width: 18px; height: 18px; border: 3px solid #24203e33; border-top-color: #d74761; border-radius: 50%; animation: spin .8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
     </style>
   </head>
   <body>
@@ -78,6 +86,7 @@
       <div id="notice" class="notice" hidden></div>
       <div class="boards" id="boards"></div>
       <div class="details" id="details" hidden></div>
+      <div class="loader" id="loader" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="loader-text"></span></div>
     </div>
 
     <dialog id="confirm">
@@ -113,6 +122,18 @@
       const dates = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
       const shortId = fingerprint => fingerprint ? fingerprint.slice(0, 10) : "";
       let boards = [];
+      let busy = false;
+      let loadToken = 0;
+
+      // Dims the page, blocks its buttons and shows a spinner with text while a request runs.
+      function setBusy(text) {
+        busy = Boolean(text);
+        $("loader-text").textContent = text || "";
+        $("loader").hidden = !busy;
+        document.querySelector(".wrap").classList.toggle("busy", busy);
+        document.querySelector(".wrap").setAttribute("aria-busy", String(busy));
+        for (const node of document.querySelectorAll(".toolbar button")) node.toggleAttribute("aria-disabled", busy);
+      }
 
       function notice(text, isError = false) {
         $("notice").hidden = !text;
@@ -327,9 +348,10 @@
         return match ? match[1] : null;
       }
 
-      async function load() {
-        $("refresh").disabled = true;
+      async function load(message) {
+        const token = ++loadToken;
         const id = scoreFromHash();
+        setBusy(message || (id ? "Loading score…" : "Loading scores…"));
         $("boards").hidden = Boolean(id);
         $("details").hidden = !id;
         $("refresh").textContent = id ? "Back to boards" : "Refresh";
@@ -337,18 +359,22 @@
         try {
           if (id) {
             $("details").replaceChildren(cell("p", "Loading…", "empty"));
-            renderDetails(await api(`/api/admin/scores?id=${encodeURIComponent(id)}`));
+            const body = await api(`/api/admin/scores?id=${encodeURIComponent(id)}`);
+            if (token !== loadToken) return;
+            renderDetails(body);
           } else {
             const body = await api("/api/admin/scores");
+            if (token !== loadToken) return;
             boards = body.boards;
             $("who").textContent = body.admin ? `Signed in as ${body.admin}` : "";
             render();
           }
         } catch (error) {
+          if (token !== loadToken) return;
           if (id) $("details").replaceChildren();
           notice(error.message, true);
         } finally {
-          $("refresh").disabled = false;
+          if (token === loadToken) setBusy("");
         }
       }
 
@@ -380,12 +406,14 @@
         $("confirm-ok").disabled = event.target.value.trim().toLowerCase() !== "clear";
       });
       $("refresh").addEventListener("click", () => {
+        if (busy) return;
         notice("");
         if (scoreFromHash()) location.hash = "";
-        else load();
+        else load("Refreshing scores…");
       });
       addEventListener("hashchange", () => { scrollTo(0, 0); load(); });
       document.addEventListener("click", async event => {
+        if (busy || event.target.closest("dialog")) return;
         const details = event.target.closest("[data-details]");
         if (details) {
           notice("");
@@ -402,6 +430,8 @@
             okLabel: "Delete score",
           });
           if (!ok) return;
+          notice("");
+          setBusy(`Deleting ${name}'s score…`);
           try {
             await api(`/api/admin/scores?id=${encodeURIComponent(id)}`, { method: "DELETE" });
             notice(`Deleted ${name}'s score of ${numbers.format(Number(score))}.`);
@@ -409,20 +439,22 @@
             notice(error.message, true);
           }
           if (scoreFromHash() === id) location.hash = "";
-          else load();
+          else await load("Refreshing scores…");
           return;
         }
         const button = event.target.closest("[data-clear]");
         if (!button || button.disabled) return;
         const category = button.dataset.clear;
         if (!(await confirmClear(category))) return;
+        notice("");
+        setBusy(category === "all" ? "Clearing all global highscores…" : `Clearing the ${LABELS[category]} board…`);
         try {
           const result = await api(`/api/admin/scores?category=${encodeURIComponent(category)}`, { method: "DELETE" });
           notice(`Deleted ${numbers.format(result.deleted)} score${result.deleted === 1 ? "" : "s"}.`);
         } catch (error) {
           notice(error.message, true);
         }
-        load();
+        await load("Refreshing scores…");
       });
       load();
     </script>
