@@ -8,6 +8,6 @@
   "seed": 1088294313,
   "audio": "audio/pini-metal.mp3",
   "edit": "Trim to 120 seconds with a 3-second fade-out",
-  "wav_path": "D:\\Atlesque Media VOF Dropbox\\Alexander Van Maele\\AI Render Node\\music\\2026-10-05\\20261005-155818-116b51\\20261005-155818-116b51.wav",
-  "metadata_path": "D:\\Atlesque Media VOF Dropbox\\Alexander Van Maele\\AI Render Node\\music\\2026-10-05\\20261005-155818-116b51\\20261005-155818-116b51.json"
+  "wav_path": "music/2026-10-05/20261005-155818-116b51/20261005-155818-116b51.wav",
+  "metadata_path": "music/2026-10-05/20261005-155818-116b51/20261005-155818-116b51.json"
 }
