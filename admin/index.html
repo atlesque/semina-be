@@ -9,6 +9,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style>
       * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
       :root { font-family: system-ui, sans-serif; color: #24203e; background: #fff5e9; }
       body { margin: 0; padding: 24px 16px 48px; }
       .wrap { max-width: 1000px; margin: auto; }
@@ -23,7 +24,7 @@
       .danger { background: #ca3255; border-color: #ca3255; color: #fff; }
       .danger:hover { background: #a92445; }
       .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-      .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+      .boards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
       section { background: #fffaf2; border: 2px solid #24203e; border-radius: 16px; padding: 16px; box-shadow: 4px 4px #ffd06e; }
       section header { margin-bottom: 12px; }
       h2 { margin: 0; font-size: 20px; }
@@ -34,6 +35,27 @@
       tr.cut td { border-bottom: 2px dashed #d74761; }
       td.when { font-size: 13px; opacity: .7; white-space: nowrap; }
       .empty { padding: 16px 0; opacity: .7; }
+      .scroll { overflow-x: auto; }
+      td.actions { white-space: nowrap; text-align: right; }
+      td.actions button, .back { min-height: 32px; padding: 2px 10px; font-size: 13px; border-radius: 10px; }
+      td.actions button + button { margin-left: 6px; }
+      code, .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+      .repeat { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 8px; background: #ffd06e; font-size: 12px; font-weight: 700; }
+      .muted { opacity: .6; }
+      .details { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+      .details h2 { margin-bottom: 4px; }
+      .details-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+      dl { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 6px 16px; margin: 12px 0 0; font-size: 15px; }
+      dt { font-weight: 700; }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      .flag { color: #ca3255; font-weight: 700; }
+      #diagnostics { margin-top: 16px; }
+      .tab-list { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 2px solid #24203e; }
+      .tab { min-height: 36px; border-radius: 10px 10px 0 0; border-bottom: 0; margin-bottom: -2px; font-size: 14px; background: #fff5e9; }
+      .tab[aria-selected="true"] { background: #ffd06e; }
+      .tab-panel { padding-top: 4px; }
+      a { color: #5647df; }
+      @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dd { margin-bottom: 6px; } }
       .notice { padding: 12px 16px; border-radius: 12px; background: #ffe4b6; margin-bottom: 20px; }
       .notice.error { background: #f8d0d8; }
       dialog { border: 2px solid #24203e; border-radius: 16px; padding: 20px; max-width: 420px; color: inherit; background: #fffaf2; }
@@ -55,14 +77,17 @@
       </div>
       <div id="notice" class="notice" hidden></div>
       <div class="boards" id="boards"></div>
+      <div class="details" id="details" hidden></div>
     </div>
 
     <dialog id="confirm">
       <form method="dialog">
         <h3 id="confirm-title">Clear scores?</h3>
         <p id="confirm-text"></p>
-        <label for="confirm-input">Type <strong>clear</strong> to confirm.</label>
-        <input id="confirm-input" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <div id="confirm-typed">
+          <label for="confirm-input">Type <strong>clear</strong> to confirm.</label>
+          <input id="confirm-input" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        </div>
         <menu>
           <button value="cancel" formnovalidate>Cancel</button>
           <button value="ok" class="danger" id="confirm-ok" disabled>Delete scores</button>
@@ -73,9 +98,20 @@
     <script>
       const LABELS = { "arcade-falling": "Falling", "arcade-stationary": "Stationary" };
       const PUBLIC_BOARD_SIZE = 10;
+      // Human names for the browser signals from scripts/fingerprint.js, in display order.
+      const SIGNALS = {
+        webdriver: "Automation (webdriver)", platform: "Platform", languages: "Languages", timezone: "Timezone",
+        timezoneOffset: "Timezone offset (min)", screen: "Screen", pixelRatio: "Pixel ratio",
+        hardwareConcurrency: "CPU threads", deviceMemory: "Memory (GB)", maxTouchPoints: "Touch points",
+        pointer: "Pointer", colorGamut: "Color gamut", hdr: "HDR", webglVendor: "GPU vendor",
+        webglRenderer: "GPU renderer", webglParams: "WebGL hash", canvas: "Canvas hash", audio: "Audio hash",
+        fonts: "Fonts", cookieEnabled: "Cookies", pdfViewer: "PDF viewer",
+      };
+      const META = { asOrganization: "Network", city: "City", region: "Region", timezone: "IP timezone", colo: "Cloudflare data center", tlsVersion: "TLS", httpProtocol: "HTTP" };
       const $ = id => document.getElementById(id);
       const numbers = new Intl.NumberFormat("en");
       const dates = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
+      const shortId = fingerprint => fingerprint ? fingerprint.slice(0, 10) : "";
       let boards = [];
 
       function notice(text, isError = false) {
@@ -98,6 +134,13 @@
         return node;
       }
 
+      function button(text, className, data) {
+        const node = cell("button", text, className);
+        node.type = "button";
+        Object.assign(node.dataset, data);
+        return node;
+      }
+
       function render() {
         const root = $("boards");
         root.replaceChildren();
@@ -107,26 +150,29 @@
           const title = document.createElement("div");
           title.append(cell("h2", `Global · ${LABELS[board.category] || board.category}`),
             cell("div", `${numbers.format(board.total)} score${board.total === 1 ? "" : "s"} stored`, "who"));
-          const clear = cell("button", "Clear board", "danger");
-          clear.type = "button";
-          clear.dataset.clear = board.category;
+          const clear = button("Clear board", "danger", { clear: board.category });
           clear.disabled = board.total === 0;
           head.append(title, clear);
           section.append(head);
           if (!board.scores.length) {
             section.append(cell("p", "No scores yet.", "empty"));
           } else {
+            const wrap = cell("div", "", "scroll");
             const table = document.createElement("table");
             const headRow = table.createTHead().insertRow();
-            headRow.append(cell("th", "#", "num"), cell("th", "Name"), cell("th", "Score", "num"), cell("th", "Saved"));
+            headRow.append(cell("th", "#", "num"), cell("th", "Name"), cell("th", "Score", "num"), cell("th", "Saved"), cell("th", ""));
             const tbody = table.createTBody();
             board.scores.forEach((row, index) => {
               const tr = tbody.insertRow();
               if (index === PUBLIC_BOARD_SIZE - 1 && board.scores.length > PUBLIC_BOARD_SIZE) tr.className = "cut";
               const saved = row.created_at ? dates.format(new Date(row.created_at)) : "";
-              tr.append(cell("td", index + 1, "num"), cell("td", row.name), cell("td", numbers.format(row.score), "num"), cell("td", saved, "when"));
+              const actions = cell("td", "", "actions");
+              actions.append(button("Details", "", { details: row.id }), button("Delete", "danger", { remove: row.id, name: row.name, score: row.score }));
+              tr.append(cell("td", index + 1, "num"), cell("td", row.name), cell("td", numbers.format(row.score), "num"),
+                cell("td", saved, "when"), actions);
             });
-            section.append(table);
+            wrap.append(table);
+            section.append(wrap);
             if (board.total > board.scores.length) section.append(cell("p", `Showing the top ${board.scores.length}. Players see the top ${PUBLIC_BOARD_SIZE}.`, "who"));
           }
           root.append(section);
@@ -135,38 +181,237 @@
         document.querySelector('[data-clear="all"]').disabled = total === 0;
       }
 
+      function definitions(pairs) {
+        const list = document.createElement("dl");
+        for (const [label, value, className] of pairs) {
+          const dd = cell("dd", value === null || value === undefined || value === "" ? "" : String(value), className);
+          if (!dd.textContent) dd.append(cell("span", "not recorded", "muted"));
+          list.append(cell("dt", label), dd);
+        }
+        return list;
+      }
+
+      function relatedTable(group, emptyText) {
+        const panel = document.createElement("div");
+        if (!group.total) {
+          panel.append(cell("p", emptyText, "empty"));
+          return panel;
+        }
+        panel.append(cell("p", `${numbers.format(group.total)} other score${group.total === 1 ? "" : "s"}${group.total > group.scores.length ? `, newest ${group.scores.length} shown` : ""}.`, "who"));
+        const wrap = cell("div", "", "scroll");
+        const table = document.createElement("table");
+        table.createTHead().insertRow().append(cell("th", "Name"), cell("th", "Score", "num"), cell("th", "Board"), cell("th", "Saved"), cell("th", ""));
+        const tbody = table.createTBody();
+        for (const row of group.scores) {
+          const link = cell("a", "Details");
+          link.href = `#score-${row.id}`;
+          const actions = cell("td", "", "actions");
+          actions.append(link);
+          tbody.insertRow().append(cell("td", row.name), cell("td", numbers.format(row.score), "num"),
+            cell("td", LABELS[row.category] || row.category), cell("td", dates.format(new Date(row.created_at)), "when"), actions);
+        }
+        wrap.append(table);
+        panel.append(wrap);
+        return panel;
+      }
+
+      // Tabs following the WAI-ARIA tabs pattern: arrow keys move between tabs.
+      function tabs(items) {
+        const root = cell("div", "", "tabs");
+        const list = cell("div", "", "tab-list");
+        list.setAttribute("role", "tablist");
+        list.setAttribute("aria-label", "Diagnostics");
+        const panels = items.map(({ id, label, content }, index) => {
+          const tab = button(label, "tab", {});
+          tab.id = `tab-${id}`;
+          tab.setAttribute("role", "tab");
+          tab.setAttribute("aria-controls", `panel-${id}`);
+          const panel = document.createElement("div");
+          panel.id = `panel-${id}`;
+          panel.className = "tab-panel";
+          panel.setAttribute("role", "tabpanel");
+          panel.setAttribute("aria-labelledby", tab.id);
+          panel.append(content);
+          list.append(tab);
+          return { tab, panel };
+        });
+        const select = index => panels.forEach(({ tab, panel }, i) => {
+          tab.setAttribute("aria-selected", String(i === index));
+          tab.tabIndex = i === index ? 0 : -1;
+          panel.hidden = i !== index;
+        });
+        panels.forEach(({ tab }, index) => {
+          tab.addEventListener("click", () => select(index));
+          tab.addEventListener("keydown", event => {
+            const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+            if (!step) return;
+            const next = (index + step + panels.length) % panels.length;
+            select(next);
+            panels[next].tab.focus();
+          });
+        });
+        select(0);
+        root.append(list, ...panels.map(({ panel }) => panel));
+        return root;
+      }
+
+      function renderDetails({ score, sameFingerprint, sameIp }) {
+        const root = $("details");
+        root.replaceChildren();
+        const summary = document.createElement("section");
+        const head = cell("div", "", "details-head");
+        const title = document.createElement("div");
+        title.append(cell("div", `Global · ${LABELS[score.category] || score.category}`, "who"),
+          cell("h2", `#${numbers.format(score.rank)} · ${score.name} · ${numbers.format(score.score)}`),
+          cell("div", score.created_at ? `Saved ${dates.format(new Date(score.created_at))}` : "", "who"));
+        head.append(title, button("Delete score", "danger", { remove: score.id, name: score.name, score: score.score }));
+        summary.append(head);
+        if (score.fingerprint_data?.webdriver) summary.append(cell("p", "Sent by an automated browser (webdriver).", "flag"));
+
+        const recorded = score.ip || score.fingerprint;
+        const diagnostics = document.createElement("section");
+        const toggle = button("Show diagnostics", "", {});
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-controls", "diagnostics");
+        const body = document.createElement("div");
+        body.id = "diagnostics";
+        body.hidden = true;
+        toggle.addEventListener("click", () => {
+          body.hidden = !body.hidden;
+          toggle.setAttribute("aria-expanded", String(!body.hidden));
+          toggle.textContent = body.hidden ? "Show diagnostics" : "Hide diagnostics";
+        });
+        diagnostics.append(toggle, body);
+        if (!recorded) {
+          body.append(cell("p", "No IP address or fingerprint is stored for this score. It was saved before they were recorded, or they were deleted after 90 days.", "empty"));
+        } else {
+          const meta = score.request_meta || {};
+          const network = definitions([
+            ["IP address", score.ip, "mono"],
+            ["Country", score.country],
+            ["ASN", score.asn ? `AS${score.asn}` : ""],
+            ...Object.entries(META).map(([key, label]) => [label, meta[key]]),
+          ]);
+          const signals = score.fingerprint_data;
+          let browser;
+          if (!signals) {
+            browser = document.createElement("div");
+            browser.append(definitions([["User agent", score.user_agent, "mono"]]),
+              cell("p", "The browser sent no fingerprint (blocked, timed out, or not sent by a script).", "who"));
+          } else {
+            const keys = [...Object.keys(SIGNALS).filter(key => key in signals), ...Object.keys(signals).filter(key => !(key in SIGNALS))];
+            browser = definitions([
+              ["Fingerprint ID", score.fingerprint, "mono"],
+              ["User agent", score.user_agent, "mono"],
+              ...keys.map(key => {
+                const value = signals[key];
+                const text = Array.isArray(value) ? value.join(", ") : value === true ? "yes" : value === false ? "no" : value;
+                return [SIGNALS[key] || key, text, key === "webdriver" && value ? "flag" : ""];
+              }),
+            ]);
+          }
+          body.append(tabs([
+            { id: "ip", label: "IP address", content: network },
+            { id: "browser", label: "Browser", content: browser },
+            { id: "same-device", label: `Similar scores (${sameFingerprint.total})`,
+              content: relatedTable(sameFingerprint, score.fingerprint ? "No other scores from this browser fingerprint." : "No fingerprint to compare.") },
+            { id: "same-ip", label: `Same IP address (${sameIp.total})`,
+              content: relatedTable(sameIp, score.ip ? "No other scores from this IP address." : "No IP address to compare.") },
+          ]));
+        }
+        root.append(summary, diagnostics);
+      }
+
+      function scoreFromHash() {
+        const match = location.hash.match(/^#score-(\d+)$/);
+        return match ? match[1] : null;
+      }
+
       async function load() {
         $("refresh").disabled = true;
+        const id = scoreFromHash();
+        $("boards").hidden = Boolean(id);
+        $("details").hidden = !id;
+        $("refresh").textContent = id ? "Back to boards" : "Refresh";
+        document.querySelector('[data-clear="all"]').hidden = Boolean(id);
         try {
-          const body = await api("/api/admin/scores");
-          boards = body.boards;
-          $("who").textContent = body.admin ? `Signed in as ${body.admin}` : "";
-          render();
+          if (id) {
+            $("details").replaceChildren(cell("p", "Loading…", "empty"));
+            renderDetails(await api(`/api/admin/scores?id=${encodeURIComponent(id)}`));
+          } else {
+            const body = await api("/api/admin/scores");
+            boards = body.boards;
+            $("who").textContent = body.admin ? `Signed in as ${body.admin}` : "";
+            render();
+          }
         } catch (error) {
+          if (id) $("details").replaceChildren();
           notice(error.message, true);
         } finally {
           $("refresh").disabled = false;
         }
       }
 
-      function confirmClear(category) {
-        const scope = category === "all"
-          ? { title: "Clear all global highscores?", count: boards.reduce((sum, board) => sum + board.total, 0), what: "both global boards" }
-          : { title: `Clear Global · ${LABELS[category]}?`, count: boards.find(board => board.category === category)?.total ?? 0, what: `the ${LABELS[category]} global board` };
-        $("confirm-title").textContent = scope.title;
-        $("confirm-text").textContent = `This deletes ${numbers.format(scope.count)} score${scope.count === 1 ? "" : "s"} from ${scope.what} for every player. Local browser boards are not affected.`;
+      function confirmAction({ title, text, typed, okLabel }) {
+        $("confirm-title").textContent = title;
+        $("confirm-text").textContent = text;
+        $("confirm-typed").hidden = !typed;
         $("confirm-input").value = "";
-        $("confirm-ok").disabled = true;
+        $("confirm-ok").textContent = okLabel;
+        $("confirm-ok").disabled = typed;
         $("confirm").returnValue = "";
         $("confirm").showModal();
         return new Promise(resolve => $("confirm").addEventListener("close", () => resolve($("confirm").returnValue === "ok"), { once: true }));
       }
 
+      function confirmClear(category) {
+        const scope = category === "all"
+          ? { title: "Clear all global highscores?", count: boards.reduce((sum, board) => sum + board.total, 0), what: "both global boards" }
+          : { title: `Clear Global · ${LABELS[category]}?`, count: boards.find(board => board.category === category)?.total ?? 0, what: `the ${LABELS[category]} global board` };
+        return confirmAction({
+          title: scope.title,
+          text: `This deletes ${numbers.format(scope.count)} score${scope.count === 1 ? "" : "s"} from ${scope.what} for every player. Local browser boards are not affected.`,
+          typed: true,
+          okLabel: "Delete scores",
+        });
+      }
+
       $("confirm-input").addEventListener("input", event => {
         $("confirm-ok").disabled = event.target.value.trim().toLowerCase() !== "clear";
       });
-      $("refresh").addEventListener("click", () => { notice(""); load(); });
+      $("refresh").addEventListener("click", () => {
+        notice("");
+        if (scoreFromHash()) location.hash = "";
+        else load();
+      });
+      addEventListener("hashchange", () => { scrollTo(0, 0); load(); });
       document.addEventListener("click", async event => {
+        const details = event.target.closest("[data-details]");
+        if (details) {
+          notice("");
+          location.hash = `score-${details.dataset.details}`;
+          return;
+        }
+        const remove = event.target.closest("[data-remove]");
+        if (remove && !remove.disabled) {
+          const { remove: id, name, score } = remove.dataset;
+          const ok = await confirmAction({
+            title: `Delete ${name}'s score?`,
+            text: `This removes ${name}'s ${numbers.format(Number(score))} from the global board for every player.`,
+            typed: false,
+            okLabel: "Delete score",
+          });
+          if (!ok) return;
+          try {
+            await api(`/api/admin/scores?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+            notice(`Deleted ${name}'s score of ${numbers.format(Number(score))}.`);
+          } catch (error) {
+            notice(error.message, true);
+          }
+          if (scoreFromHash() === id) location.hash = "";
+          else load();
+          return;
+        }
         const button = event.target.closest("[data-clear]");
         if (!button || button.disabled) return;
         const category = button.dataset.clear;

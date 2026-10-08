@@ -40,15 +40,40 @@ If the API or database is unavailable, the local board still works and the globa
 Scores are reported by the browser, so treat the global board as a friendly board rather than a
 cheat-proof one; the server only rejects malformed names, categories and implausible scores.
 
+### Who submitted a score
+
+To help spot bots and repeat cheaters, each global score also stores where it came from:
+
+- **From Cloudflare** (`functions/api/scores.js`): the IP address (`CF-Connecting-IP`, which the
+  browser cannot set), country, ASN, user agent, and network name, city, region, timezone, data
+  center and TLS/HTTP version as JSON.
+- **From the browser** (`scripts/fingerprint.js`): rendering and hardware signals that stay the same
+  for one browser on one device across visits and cleared storage: canvas, WebGL GPU and parameters,
+  an offline audio render, installed fonts, screen, pixel ratio, languages, timezone, CPU threads,
+  memory, touch and pointer, color gamut, and the `navigator.webdriver` automation flag. Collection
+  starts when a run ends and is capped at 1.5 seconds; a score is still saved without it. The
+  server keeps only small flat values, stores them as sorted JSON and uses their SHA-256 as the
+  fingerprint ID, so the same browser gets the same ID whatever it claims.
+
+A fingerprint is a strong hint, not proof: a determined cheater can spoof every signal, and identical
+devices (two stock iPhones of the same model, for example) can share one. A score with no fingerprint
+or `webdriver: yes` is worth a closer look.
+
+IP addresses and fingerprints are personal data under the GDPR. `privacy.html` is the site's privacy
+policy (linked from the title screen and the save-score form) and explains this to players. They are
+only collected when a player saves a score, are visible only to admins, and are cleared after 90 days
+(`ORIGIN_RETENTION_DAYS`): `pruneOrigins` nulls them on every score save and every admin board load,
+leaving the name and score. Keep the policy in step with any change to what is collected.
+
 ### Cloudflare setup
 
 The site deploys as a Cloudflare Pages project, which picks up the `functions/` folder automatically.
 
 1. Create a D1 database, for example `npx wrangler d1 create <database-name>`, or in the
    dashboard under **Storage & Databases → D1**.
-2. Create the table:
-   `npx wrangler d1 execute <database-name> --remote --file=migrations/0001_create_scores.sql`
-   (or paste the file into the D1 console).
+2. Create the table, then add the submission details columns, by running each migration once in
+   order: `npx wrangler d1 execute <database-name> --remote --file=migrations/0001_create_scores.sql`,
+   then the same with `migrations/0002_score_origin.sql` (or paste the files into the D1 console).
 3. In the Pages project, open **Settings → Bindings → Add → D1 database**, set the variable name
    to `DB` and pick the database. Add it for Production and, if you want previews to work, Preview.
 4. Redeploy. Until the binding exists, `/api/scores` answers `503` and the game shows the global
@@ -60,8 +85,12 @@ migration with `--local`.
 ## Admin dashboard
 
 `admin.semina.be` opens a dashboard (`admin/index.html`) that shows both global boards (top 50 each,
-with a line under the top 10 players see) and can clear one board or both. It talks to
-`GET /api/admin/scores` and `DELETE /api/admin/scores?category=<arcade-falling|arcade-stationary|all>`.
+with a line under the top 10 players see). It can delete a single score, clear one board or both, and
+open a details screen for any score: its board, rank and a delete button, with a **Show diagnostics**
+box (closed by default) whose tabs show the IP details, the browser fingerprint, other scores from the
+same fingerprint and other scores from the same IP. It talks to `GET /api/admin/scores`, `GET /api/admin/scores?id=<id>`,
+`DELETE /api/admin/scores?id=<id>` and
+`DELETE /api/admin/scores?category=<arcade-falling|arcade-stationary|all>`.
 
 Cloudflare Access is the login, and the server checks it again: `functions/_shared/access.js`
 verifies the Access JWT (`Cf-Access-Jwt-Assertion` header or `CF_Authorization` cookie) against the
