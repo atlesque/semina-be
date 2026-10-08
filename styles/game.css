@@ -26,7 +26,7 @@ body.page-fade::before { animation: page-fade .5s ease forwards; }
 button, input { font: inherit; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
 button { min-height: 48px; cursor: pointer; border: 2px solid #24203e; border-radius: 16px; color: inherit; background: #fffaf2; font-weight: 750; touch-action: manipulation; }
-button:hover { background: #ffe4b6; }
+button:not(.game-object):hover { background: #ffe4b6; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #5647df; outline-offset: 4px; }
 [hidden] { display: none !important; }
 #audio-glow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .2; }
