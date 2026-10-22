@@ -66,6 +66,7 @@ main { position: relative; height: calc(100% - 90px); }
 .title-links .repo-link { margin-top: 0; }
 .privacy-link { color: inherit; font-size: 13px; font-weight: 700; opacity: .7; }
 .privacy-link:hover, .privacy-link:focus-visible { opacity: 1; }
+button.privacy-link, button.privacy-link:not(.game-object):hover { min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; }
 #game-screen { height: 100%; max-width: 850px; margin: auto; position: relative; display: flex; flex-direction: column; }
 .target-panel { z-index: 1; padding: 8px 24px 14px; text-align: center; flex-shrink: 0; }
 .wave-line, .combo-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; }
